@@ -7,7 +7,8 @@ st.set_page_config(page_title="SINTALA-STROKE by dr. Faisal", layout="wide")
 
 # --- SETUP AI ---
 # Menggunakan API Key yang sudah didapatkan sebelumnya
-genai.configure(api_key="AQ.Ab8RN6IBQDEmVnPd3ZuUOnxiM1zjTQlJ5mDg0LeWW_oIvzB6-g")
+api_key = st.secrets["GOOGLE_API_KEY"]
+genai.configure(api_key=api_key)
 # Hapus baris model lama, ganti dengan 3 baris ini:
 available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
 model_name = available_models[0] if available_models else 'gemini-1.5-flash'
