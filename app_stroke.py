@@ -1,9 +1,11 @@
 import streamlit as st
 from datetime import datetime
 
-# --- 1. SESSION STATE UNTUK LOGIN ---
+# --- 1. SESSION STATE ---
 if 'nama_dokter' not in st.session_state:
     st.session_state.nama_dokter = ""
+if 'pilihan_layanan' not in st.session_state:
+    st.session_state.pilihan_layanan = None
 
 # --- CONFIG HALAMAN ---
 st.set_page_config(page_title="SINTALA-STROKE", layout="wide", page_icon="🩺")
@@ -12,135 +14,129 @@ st.set_page_config(page_title="SINTALA-STROKE", layout="wide", page_icon="🩺")
 st.markdown("""
     <style>
     @media print {
-        .stButton, .stSidebar, header, footer, [data-testid="stHeader"], .no-print, .stTabs {
+        .stButton, .stSidebar, header, footer, [data-testid="stHeader"], .no-print, .stTabs, .stSelectbox {
             display: none !important;
         }
         .main { background-color: white !important; }
         .print-container { 
             border: 2px solid black !important; 
-            padding: 30px !important; 
+            padding: 20px !important; 
             display: block !important;
             color: black !important;
+            font-size: 12pt;
         }
     }
     .report-box { padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #d1d1d1; background-color: white; }
-    .high-risk { border-left: 10px solid #dc3545; }
-    .low-risk { border-left: 10px solid #28a745; }
-    .critical-box { background-color: #fff3f3; border: 1px solid #dc3545; padding: 15px; border-radius: 5px; margin-top: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. POP-UP LOGIN ---
+# --- 2. LOGIKA LOGIN & PEMILIHAN LAYANAN ---
 if not st.session_state.nama_dokter:
     st.markdown("## 🩺 Selamat Datang di SINTALA-STROKE")
-    with st.container():
-        st.write("Silakan masukkan identitas Dokter untuk memulai layanan:")
-        input_dr = st.text_input("Nama Lengkap Dokter (beserta gelar):")
-        if st.button("Masuk Aplikasi"):
-            if input_dr:
-                st.session_state.nama_dokter = input_dr
-                st.rerun()
-            else:
-                st.warning("Nama Dokter wajib diisi.")
+    input_dr = st.text_input("Masukkan Nama Lengkap Dokter (beserta gelar):")
+    if st.button("Masuk Aplikasi"):
+        if input_dr:
+            st.session_state.nama_dokter = input_dr
+            st.rerun()
     st.stop()
 
-# --- 3. SIDEBAR ---
+if st.session_state.pilihan_layanan is None:
+    st.markdown(f"### Halo, {st.session_state.nama_dokter}")
+    st.write("Silakan pilih modul layanan yang ingin digunakan:")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if st.button("📊 Skrining Risiko (FSRP)", use_container_width=True):
+            st.session_state.pilihan_layanan = "FSRP"
+            st.rerun()
+    with col_b:
+        if st.button("🚨 Evaluasi Akut (NIHSS)", use_container_width=True):
+            st.session_state.pilihan_layanan = "NIHSS"
+            st.rerun()
+    st.stop()
+
+# --- 3. SIDEBAR NAVIGATION ---
 with st.sidebar:
     st.title("🩺 SINTALA-STROKE")
-    st.write(f"Login sebagai: \n**{st.session_state.nama_dokter}**")
-    if st.button("Log Out / Ganti Dokter"):
-        st.session_state.nama_dokter = ""
+    st.write(f"DPJP: **{st.session_state.nama_dokter}**")
+    st.write(f"Layanan: **{st.session_state.pilihan_layanan}**")
+    if st.button("⬅️ Ganti Modul / Reset"):
+        st.session_state.pilihan_layanan = None
         st.rerun()
     st.divider()
-    layanan = st.radio("Pilih Layanan:", ["Skrining Risiko (FSRP)", "Evaluasi Akut (NIHSS)"])
-    st.divider()
-    st.markdown('<button onclick="window.print()" style="width: 100%; height: 3em; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">🖨️ Cetak Laporan (Print)</button>', unsafe_allow_html=True)
+    st.markdown('<button onclick="window.print()" style="width: 100%; height: 3em; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">🖨️ Cetak Laporan</button>', unsafe_allow_html=True)
 
-# --- 4. LAYANAN 1: FSRP (VERSI CHECKLIST) ---
-if layanan == "Skrining Risiko (FSRP)":
+# --- 4. MODUL FSRP ---
+if st.session_state.pilihan_layanan == "FSRP":
     st.header("Kalkulator Risiko Stroke (FSRP)")
-    
     col1, col2 = st.columns(2)
     with col1:
-        nama_pasien = st.text_input("Nama Pasien", "Pasien Anonim")
-        jk = st.selectbox("Jenis Kelamin", ["Pria", "Wanita"])
-        tds = st.number_input("Tekanan Darah Sistolik (mmHg)", 90, 250, 120)
-    
+        nama_p = st.text_input("Nama Pasien", "Pasien Anonim")
+        tds = st.number_input("TD Sistolik (mmHg)", 90, 250, 120)
     with col2:
-        st.write("**Checklist Faktor Risiko:**")
         u55 = st.checkbox("Usia ≥ 55 Tahun")
         smk = st.checkbox("Merokok Aktif")
-        dm = st.checkbox("Riwayat Diabetes (DM)")
-        st.write("**Checklist Penyakit Jantung:**")
-        pjk = st.checkbox("Penyakit Jantung Koroner (PJK)")
-        af = st.checkbox("Fibrilasi Atrium (AF)")
-        lvh = st.checkbox("LV Hipertrofi (EKG)")
+        dm = st.checkbox("Diabetes Melitus")
+        jantung = st.multiselect("Riwayat Penyakit Jantung", ["PJK", "AF", "LVH (EKG)"])
 
     if st.button("Proses Analisa FSRP"):
-        # Logika Poin
-        poin = sum([u55*2, (tds>=140)*3, smk*3, dm*2, pjk*2, af*4, lvh*5])
+        poin = sum([u55*2, (tds>=140)*3, smk*3, dm*2, ("PJK" in jantung)*2, ("AF" in jantung)*4, ("LVH (EKG)" in jantung)*5])
         kategori = "TINGGI" if poin >= 6 else "RENDAH"
-        warna_class = "high-risk" if kategori == "TINGGI" else "low-risk"
-        
-        st.markdown(f"""
-            <div class="report-box {warna_class} print-container">
-                <h2 style="text-align: center; margin-bottom: 0;">LAPORAN SKRINING RISIKO STROKE</h2>
-                <p style="text-align: center; border-bottom: 2px solid black; padding-bottom: 10px;">RSUD/PUSKESMAS TANAH LAUT</p>
-                <table style="width: 100%; line-height: 1.6;">
-                    <tr><td><b>Nama Pasien</b></td><td>: {nama_pasien}</td><td><b>DPJP</b></td><td>: {st.session_state.nama_dokter}</td></tr>
-                    <tr><td><b>Usia</b></td><td>: {">= 55 Thn" if u55 else "< 55 Thn"}</td><td><b>TD Sistolik</b></td><td>: {tds} mmHg</td></tr>
-                </table>
-                <hr>
-                <h3 style="color: {'red' if kategori == 'TINGGI' else 'green'};">KATEGORI RISIKO: {kategori} ({poin} Poin)</h3>
-                <p><b>Faktor Terdeteksi:</b> {"Merokok, " if smk else ""}{"DM, " if dm else ""}{"PJK, " if pjk else ""}{"AF, " if af else ""}{"LVH" if lvh else "-"}</p>
-                <br>
-                <p style="text-align: right;">Tanah Laut, {datetime.now().strftime("%d/%m/%Y")}<br>Dokter Pemeriksa,<br><br><br><br><b>( {st.session_state.nama_dokter} )</b></p>
-            </div>
-        """, unsafe_allow_html=True)
-
-# --- 5. LAYANAN 2: NIHSS & KONTRAINDIKASI ---
-else:
-    st.header("Evaluasi Akut & Protokol Trombolisis")
-    
-    tab1, tab2 = st.tabs(["Skala NIHSS", "Checklist Kontraindikasi"])
-    
-    with tab1:
-        col_a, col_b = st.columns(2)
-        with col_a:
-            loc = st.selectbox("1a. Tingkat Kesadaran", ["0: Sadar penuh", "1: Somnolen", "2: Stupor", "3: Koma"])
-            gaze = st.selectbox("2. Gerakan Mata (Gaze)", ["0: Normal", "1: Paresis gaze parsial", "2: Deviasi paksa"])
-            motor_ki = st.selectbox("5. Motorik Lengan Kiri", ["0: Tanpa jatuh", "1: Jatuh < 10 dtk", "2: Lawan gravitasi", "3: Flasid"])
-        with col_b:
-            motor_ka = st.selectbox("5. Motorik Lengan Kanan", ["0: Tanpa jatuh", "1: Jatuh < 10 dtk", "2: Lawan gravitasi", "3: Flasid"])
-            bahasa = st.selectbox("9. Bahasa (Afasia)", ["0: Normal", "1: Afasia ringan", "2: Afasia berat", "3: Global"])
-            bicara = st.selectbox("10. Artikulasi (Disartria)", ["0: Normal", "1: Ringan/Pelo", "2: Berat"])
-        
-        total_nihss = int(loc[0]) + int(gaze[0]) + int(motor_ki[0]) + int(motor_ka[0]) + int(bahasa[0]) + int(bicara[0])
-        st.metric("Total Skor NIHSS", total_nihss)
-
-    with tab2:
-        st.subheader("⚠️ Skrining Kontraindikasi rTPA")
-        abs1 = st.checkbox("Riwayat perdarahan intrakranial (ICH)")
-        abs2 = st.checkbox("Trauma kepala berat / Stroke dalam 3 bulan terakhir")
-        abs3 = st.checkbox("Tekanan Darah >185/110 mmHg (Refrakter)")
-        abs4 = st.checkbox("Perdarahan internal aktif")
-
-    if st.button("Selesaikan Laporan IGD"):
-        status = "TIDAK LAYAK" if (abs1 or abs2 or abs3 or abs4) else "LAYAK (PERTIMBANGKAN)"
         
         st.markdown(f"""
             <div class="report-box print-container">
-                <h2 style="text-align: center;">RESUME EVALUASI STROKE AKUT</h2>
+                <h2 style="text-align: center;">LAPORAN SKRINING RISIKO STROKE (FSRP)</h2>
                 <hr>
-                <table style="width: 100%; line-height: 1.8;">
-                    <tr><td><b>SKOR NIHSS</b></td><td>: {total_nihss}</td></tr>
-                    <tr><td><b>STATUS TROMBOLISIS</b></td><td>: <b>{status}</b></td></tr>
-                </table>
-                <div class="critical-box">
-                    <b>Catatan DPJP:</b><br>
-                    {st.session_state.nama_dokter} - Segera aktivasi protokol stroke.
-                </div>
-                <br><br>
+                <p><b>Nama Pasien:</b> {nama_p} | <b>Pemeriksa:</b> {st.session_state.nama_dokter}</p>
+                <p><b>TD Sistolik:</b> {tds} mmHg | <b>Kategori Risiko:</b> {kategori} ({poin} Poin)</p>
+                <br><p style="text-align: right;"><b>( {st.session_state.nama_dokter} )</b></p>
+            </div>
+        """, unsafe_allow_html=True)
+
+# --- 5. MODUL NIHSS (SESUAI PANDUAN GAMBAR) ---
+else:
+    st.header("Skala Stroke NIHSS (Evaluasi Lengkap)")
+    st.info("Pilih skor sesuai hasil pemeriksaan fisik pasien.")
+    
+    with st.expander("1. Kesadaran (LOC)", expanded=True):
+        c1a = st.selectbox("1a. Derajat Kesadaran", ["0: Sadar", "1: Mengantuk", "2: Stupor", "3: Koma"])
+        c1b = st.selectbox("1b. LOC (Menjawab Pertanyaan: Bulan & Usia)", ["0: Keduanya tepat", "1: Satu tepat", "2: Salah semua"])
+        c1c = st.selectbox("1c. LOC (Melaksanakan Perintah: Buka Mata & Genggam Tangan)", ["0: Keduanya tepat", "1: Satu tepat", "2: Salah semua"])
+    
+    with st.expander("2 - 4. Penglihatan & Wajah"):
+        c2 = st.selectbox("2. Gerakan mata konjugat horisontal (GAZE)", ["0: Normal", "1: Abnormal pada satu mata", "2: Abnormal pada kedua mata"])
+        c3 = st.selectbox("3. Lapang pandang pada tes konfrontasi", ["0: Tidak ada gangguan", "1: Hemianopia parsial", "2: Hemianopia komplit", "3: Hemianopia bilateral"])
+        c4 = st.selectbox("4. Kelumpuhan wajah", ["0: Normal", "1: Minor", "2: Parsial", "3: Komplit"])
+
+    with st.expander("5 - 6. Motorik (Lengan & Tungkai)"):
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            c5a = st.selectbox("5a. Motorik Lengan Kanan", ["0: Tidak ada kelumpuhan", "1: Jatuh sebelum 10 detik", "2: Tidak dapat diluruskan penuh", "3: Tidak dapat menahan gravitasi", "4: Tidak ada gerakan"])
+            c6a = st.selectbox("6a. Motorik Tungkai Kanan", ["0: Tidak ada kelumpuhan", "1: Jatuh sebelum 10 detik", "2: Tidak dapat diluruskan penuh", "3: Tidak dapat menahan gravitasi", "4: Tidak ada gerakan"])
+        with col_m2:
+            c5b = st.selectbox("5b. Motorik Lengan Kiri", ["0: Tidak ada kelumpuhan", "1: Jatuh sebelum 10 detik", "2: Tidak dapat diluruskan penuh", "3: Tidak dapat menahan gravitasi", "4: Tidak ada gerakan"])
+            c6b = st.selectbox("6b. Motorik Tungkai Kiri", ["0: Tidak ada kelumpuhan", "1: Jatuh sebelum 10 detik", "2: Tidak dapat diluruskan penuh", "3: Tidak dapat menahan gravitasi", "4: Tidak ada gerakan"])
+
+    with st.expander("7 - 11. Ataksia, Sensorik & Bahasa"):
+        c7 = st.selectbox("7. Ataksia ekstremitas", ["0: Tidak ada", "1: Pada satu ekstremitas", "2: Pada dua atau lebih"])
+        c8 = st.selectbox("8. Sensorik", ["0: Normal", "1: Parsial", "2: Terganggu berat"])
+        c9 = st.selectbox("9. Afasia", ["0: Tidak ada afasia", "1: Afasia ringan-sedang", "2: Afasia berat", "3: Bisu"])
+        c10 = st.selectbox("10. Disartria", ["0: Normal", "1: Disartria ringan-sedang", "2: Distartria berat"])
+        c11 = st.selectbox("11. Neglect / Inattention", ["0: Normal", "1: Ringan", "2: Hebat"])
+
+    if st.button("Selesaikan Laporan NIHSS"):
+        scores = [c1a, c1b, c1c, c2, c3, c4, c5a, c5b, c6a, c6b, c7, c8, c9, c10, c11]
+        total_nihss = sum([int(s.split(":")[0]) for s in scores])
+        
+        st.markdown(f"""
+            <div class="report-box print-container">
+                <h2 style="text-align: center;">RESUME PEMERIKSAAN NIHSS</h2>
+                <hr>
+                <p><b>Dokter Pemeriksa:</b> {st.session_state.nama_dokter}</p>
+                <p><b>Tanggal Pemeriksaan:</b> {datetime.now().strftime("%d/%m/%Y %H:%M")}</p>
+                <h3 style="background-color: #f0f0f0; padding: 10px;">TOTAL SKOR NIHSS: {total_nihss}</h3>
+                <p><b>Interpretasi:</b> 
+                {"Stroke Ringan" if total_nihss <= 4 else "Stroke Sedang" if total_nihss <= 15 else "Stroke Berat"}</p>
+                <br><br><br>
                 <p style="text-align: right;"><b>( {st.session_state.nama_dokter} )</b></p>
             </div>
         """, unsafe_allow_html=True)
