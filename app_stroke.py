@@ -5,14 +5,14 @@ import google.generativeai as genai
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="SINTALA-STROKE by dr. Faisal", layout="wide")
 
-# --- SETUP AI ---
-# Menggunakan API Key yang sudah didapatkan sebelumnya
+# --- SETUP AI CLOUD ---
+import os
+
+# Mengambil key dari Secrets Streamlit
 api_key = st.secrets["GOOGLE_API_KEY"]
 genai.configure(api_key=api_key)
-# Hapus baris model lama, ganti dengan 3 baris ini:
-available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-model_name = available_models[0] if available_models else 'gemini-1.5-flash'
-model = genai.GenerativeModel(model_name)
+
+model = genai.GenerativeModel('gemini-1.5-flash')
 # --- CUSTOM CSS UNTUK PRINT ---
 st.markdown("""
     <style>
