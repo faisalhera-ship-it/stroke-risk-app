@@ -125,13 +125,49 @@ if st.session_state.pilihan_layanan == "FSRP":
             </div>
         """, unsafe_allow_html=True)
 
-# --- MODUL NIHSS & SIRIRAJ (TETAP SAMA SEPERTI VERSI SEBELUMNYA) ---
+# --- NIHSS LENGKAP ---
 elif st.session_state.pilihan_layanan == "NIHSS":
     st.header("🚨 National Institutes of Health Stroke Scale")
-    # (Kode NIHSS yang 11 poin lengkap dimasukkan di sini...)
-    st.write("Silakan isi evaluasi 11 poin sesuai panduan fisik.")
+    with st.form("nihss_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            n1a = st.selectbox("1a. Derajad kesadaran", ["0: Sadar", "1: Mengantuk", "2: Stupor", "3: Koma"])
+            n1b = st.selectbox("1b. Derajad kesadaran (Tanya)", ["0: Tepat 2", "1: Tepat 1", "2: Salah"])
+            n1c = st.selectbox("1c. Derajad kesadaran (Perintah)", ["0: Tepat 2", "1: Tepat 1", "2: Salah"])
+            n2 = st.selectbox("2. GAZE (Mata konjugat)", ["0: Normal", "1: Abnormal 1 mata", "2: Abnormal 2 mata"])
+            n3 = st.selectbox("3. Lapang pandang", ["0: Normal", "1: Parsial", "2: Komplit", "3: Bilateral"])
+            n4 = st.selectbox("4. Kelumpuhan wajah", ["0: Normal", "1: Minor", "2: Parsial", "3: Komplit"])
+            n7 = st.selectbox("7. Ataksia ekstremitas", ["0: Tidak ada", "1: Satu ekstremitas", "2: Dua ekstremitas"])
+            n8 = st.selectbox("8. Sensorik", ["0: Normal", "1: Parsial", "2: Berat"])
+        with c2:
+            n5a = st.selectbox("5a. Motorik Lengan Kanan", ["0: Normal", "1: Jatuh < 10 dtk", "2: Tak lawan gravitasi", "3: Tak ada gerakan"])
+            n5b = st.selectbox("5b. Motorik Lengan Kiri", ["0: Normal", "1: Jatuh < 10 dtk", "2: Tak lawan gravitasi", "3: Tak ada gerakan"])
+            n6a = st.selectbox("6a. Motorik Tungkai Kanan", ["0: Normal", "1: Jatuh < 5 dtk", "2: Tak lawan gravitasi", "3: Tak ada gerakan"])
+            n6b = st.selectbox("6b. Motorik Tungkai Kiri", ["0: Normal", "1: Jatuh < 5 dtk", "2: Tak lawan gravitasi", "3: Tak ada gerakan"])
+            n9 = st.selectbox("9. Afasia", ["0: Normal", "1: Ringan", "2: Berat", "3: Bisu"])
+            n10 = st.selectbox("10. Disartria", ["0: Normal", "1: Ringan/Pelo", "2: Berat"])
+            n11 = st.selectbox("11. Neglect / Inattention", ["0: Normal", "1: Ringan", "2: Hebat"])
+        submit_n = st.form_submit_button("HITUNG NIHSS")
+    
+    if submit_n:
+        total = sum([int(x[0]) for x in [n1a, n1b, n1c, n2, n3, n4, n5a, n5b, n6a, n6b, n7, n8, n9, n10, n11]])
+        st.markdown(f"<div class='report-box print-container'><h3>SKOR NIHSS: {total}</h3><p>Pemeriksa: {st.session_state.nama_dokter}</p></div>", unsafe_allow_html=True)
 
+# --- SIRIRAJ SCORE ---
 elif st.session_state.pilihan_layanan == "SIRIRAJ":
     st.header("🧠 Siriraj Stroke Score")
-    # (Kode Siriraj dimasukkan di sini...)
-    st.write("Silakan isi parameter klinis untuk pembedaan jenis stroke.")
+    with st.form("sss_form"):
+        col_a, col_b = st.columns(2)
+        with col_a:
+            s_kes = st.selectbox("Kesadaran", ["0: Sadar", "1: Somnolen", "2: Koma"])
+            s_mun = st.radio("Muntah Proyektil", [0, 1], format_func=lambda x: "Ya" if x==1 else "Tidak")
+            s_nye = st.radio("Nyeri Kepala (2 jam)", [0, 1], format_func=lambda x: "Ya" if x==1 else "Tidak")
+        with col_b:
+            s_dia = st.number_input("TD Diastolik", 50, 150, 90)
+            s_ath = st.checkbox("Tanda Atheroma (DM/PJK)")
+        submit_s = st.form_submit_button("HITUNG SIRIRAJ")
+
+    if submit_s:
+        sss = (2.5 * int(s_kes[0])) + (2 * s_mun) + (2 * s_nye) + (0.1 * s_dia) - (3 * int(s_ath)) - 12
+        diag = "HEMORAGIK" if sss > 1 else "INFARK" if sss < -1 else "BORDERLINE"
+        st.markdown(f"<div class='report-box print-container'><h3>SIRIRAJ SCORE: {sss:.2f}</h3><h2>DIAGNOSA: {diag}</h2></div>", unsafe_allow_html=True)
