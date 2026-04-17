@@ -5,17 +5,22 @@ import google.generativeai as genai
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="SINTALA-STROKE by dr. Faisal", layout="wide")
 
+# Hapus baris lama yang berisi API Key langsung
+# Ganti dengan blok ini:
+import streamlit as st
+import google.generativeai as genai
+
 # --- SETUP AI CLOUD ---
-import os
+import streamlit as st
+import google.generativeai as genai
 
-# Membaca kunci dari pengaturan Secrets Streamlit
+# Mengambil kunci dari Secrets Streamlit Cloud secara aman
 if "GOOGLE_API_KEY" in st.secrets:
-    api_key = st.secrets["GOOGLE_API_KEY"]
+    api_key_faisal = st.secrets["GOOGLE_API_KEY"]
+    genai.configure(api_key=api_key_faisal)
 else:
-    # Fallback untuk running lokal
-    api_key = "AQ.Ab8RN6IBQDEmVnPd3ZuUOnxiM1zjTQlJ5mDg0LeWW_oIvzB6-g"
+    st.error("Konfigurasi API Key belum terpasang di Dashboard Streamlit.")
 
-genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
 # --- CUSTOM CSS UNTUK PRINT ---
 st.markdown("""
