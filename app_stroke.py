@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+import base64
 
 # --- 1. SESSION STATE ---
 if 'nama_dokter' not in st.session_state:
@@ -10,7 +11,7 @@ if 'pilihan_layanan' not in st.session_state:
 # --- CONFIG HALAMAN ---
 st.set_page_config(page_title="SINTALA-STROKE", layout="wide", page_icon="🩺")
 
-# --- CUSTOM CSS (PREMIUM MODERN UI) ---
+# --- CUSTOM CSS (PREMIUM UI + PRINT SETUP) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
@@ -21,20 +22,18 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #eef0f2;
         text-align: center;
     }
-    .author-text {
-        color: #004a99; font-weight: 600; font-size: 1.1rem; margin-top: -15px; margin-bottom: 25px;
-    }
-    .module-card {
-        background: white; padding: 30px; border-radius: 20px;
-        border-top: 6px solid #004a99; transition: 0.4s ease;
-        text-align: center; cursor: pointer; height: 100%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    }
-    .module-card:hover { transform: translateY(-10px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+    .author-text { color: #004a99; font-weight: 600; font-size: 1.1rem; margin-top: -15px; margin-bottom: 25px; }
     .report-box { 
         background: white; padding: 30px; border-radius: 12px; 
         border: 2px solid #004a99; margin-top: 20px; color: black;
     }
+    
+    /* Tombol Print Custom */
+    .print-btn {
+        width: 100%; height: 3.5em; background: #28a745; color: white; 
+        border: none; border-radius: 12px; font-weight: bold; cursor: pointer;
+    }
+
     @media print {
         .no-print, header, footer, [data-testid="stHeader"], section[data-testid="stSidebar"], .stButton { display: none !important; }
         .print-container { 
@@ -48,40 +47,48 @@ st.markdown("""
 # --- 2. LOGIN PAGE ---
 if not st.session_state.nama_dokter:
     st.markdown("<br><br>", unsafe_allow_html=True)
-    col_l, col_m, col_r = st.columns([1, 1.5, 1])
+    _, col_m, _ = st.columns([1, 1.5, 1])
     with col_m:
-        st.markdown("""
+        st.markdown(f"""
             <div class='main-card'>
                 <h1 style='color: #004a99; margin-bottom: 0;'>🩺 SINTALA-STROKE</h1>
                 <p class='author-text'>by. dr. Faisal Bayu</p>
-                <p style='color: #6c757d; margin-bottom: 30px;'>Sistem Informasi & Analisa Stroke Terpadu</p>
+                <p style='color: #6c757d; margin-bottom: 30px;'>Puskesmas Tirta Jaya - Tanah Laut</p>
             </div>
         """, unsafe_allow_html=True)
-        input_dr = st.text_input("Identitas Dokter Pemeriksa:", placeholder="Masukkan nama Anda...")
+        input_dr = st.text_input("Identitas Dokter Pemeriksa (DPJP):", placeholder="dr. Faisal Bayu")
         if st.button("Masuk Ke Dashboard", use_container_width=True):
             if input_dr:
                 st.session_state.nama_dokter = input_dr
                 st.rerun()
     st.stop()
 
-# --- 3. DASHBOARD UTAMA ---
+# --- 3. SIDEBAR ---
+with st.sidebar:
+    st.markdown("<h3>SINTALA</h3>", unsafe_allow_html=True)
+    st.write(f"DPJP: **{st.session_state.nama_dokter}**")
+    if st.button("🔄 Kembali ke Menu Utama"):
+        st.session_state.pilihan_layanan = None
+        st.rerun()
+    st.divider()
+    st.write("**Opsi Output:**")
+    # Tombol Print Browser
+    st.markdown('<button onclick="window.print()" class="print-btn">🖨️ Cetak Laporan (Quick)</button>', unsafe_allow_html=True)
+
+# --- 4. DASHBOARD & MODUL ---
 if st.session_state.pilihan_layanan is None:
     st.markdown("<h1 style='color: #004a99; margin-bottom: 0;'>🩺 SINTALA-STROKE</h1>", unsafe_allow_html=True)
     st.markdown("<p style='font-weight: 600; color: #004a99; font-size: 1.2rem;'>by. dr. Faisal Bayu</p>", unsafe_allow_html=True)
-    st.write(f"Selamat bertugas, **{st.session_state.nama_dokter}**. Silakan pilih modul:")
     
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown('<div class="module-card"><h3>📊 FSRP</h3><p>Framingham Stroke Risk Profile<br>(Kolesterol Included)</p></div>', unsafe_allow_html=True)
-        if st.button("Buka FSRP", use_container_width=True):
+        if st.button("📊 Buka FSRP", use_container_width=True):
             st.session_state.pilihan_layanan = "FSRP"; st.rerun()
     with c2:
-        st.markdown('<div class="module-card" style="border-top-color: #dc3545;"><h3>🚨 NIHSS</h3><p>Evaluasi Defisit Akut<br>11 Poin Lengkap</p></div>', unsafe_allow_html=True)
-        if st.button("Buka NIHSS", use_container_width=True):
+        if st.button("🚨 Buka NIHSS", use_container_width=True):
             st.session_state.pilihan_layanan = "NIHSS"; st.rerun()
     with c3:
-        st.markdown('<div class="module-card" style="border-top-color: #ff8c00;"><h3>🧠 SIRIRAJ</h3><p>Siriraj Stroke Score<br>Infark vs Hemoragik</p></div>', unsafe_allow_html=True)
-        if st.button("Buka Siriraj", use_container_width=True):
+        if st.button("🧠 Buka SIRIRAJ", use_container_width=True):
             st.session_state.pilihan_layanan = "SIRIRAJ"; st.rerun()
     st.stop()
 
