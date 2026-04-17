@@ -1,7 +1,48 @@
 import streamlit as st
 from datetime import datetime
+from fpdf import FPDF
 import base64
 
+# --- 1. FUNGSI GENERATE PDF (CORE FEATURE) ---
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 16)
+        self.set_text_color(0, 74, 153)
+        self.cell(0, 10, 'SINTALA-STROKE REPORT', 0, 1, 'C')
+        self.set_font('Arial', 'I', 10)
+        self.cell(0, 10, 'by. dr. Faisal Bayu', 0, 1, 'C')
+        self.ln(5)
+
+def buat_pdf_stroke(nama_dr, jenis_layanan, data_pasien, hasil_skor, interpretasi):
+    pdf = PDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # Body Laporan
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(200, 10, txt=f"Tanggal Pemeriksaan: {datetime.now().strftime('%d/%m/%Y %H:%M')}", ln=True)
+    pdf.cell(200, 10, txt=f"Dokter Pemeriksa (DPJP): {nama_dr}", ln=True)
+    pdf.ln(10)
+    
+    pdf.set_fill_color(240, 242, 246)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 15, txt=f"MODUL: {jenis_layanan}", ln=True, align='C', fill=True)
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Nama Pasien: {data_pasien}", ln=True)
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 15, txt=f"HASIL SKOR: {hasil_skor}", ln=True)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt=f"INTERPRETASI: {interpretasi}", ln=True)
+    
+    pdf.ln(30)
+    pdf.set_font("Arial", size=11)
+    pdf.cell(0, 10, txt=f"Tanah Laut, {datetime.now().strftime('%d %B %Y')}", ln=True, align='R')
+    pdf.ln(10)
+    pdf.cell(0, 10, txt=f"( {nama_dr} )", ln=True, align='R')
+    
+    return pdf.output(dest='S').encode('latin-1')
 # --- 1. SESSION STATE ---
 if 'nama_dokter' not in st.session_state:
     st.session_state.nama_dokter = ""
