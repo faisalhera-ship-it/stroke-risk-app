@@ -19,6 +19,10 @@ st.markdown("""
     .main-card {
         background: white; padding: 40px; border-radius: 24px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #eef0f2;
+        text-align: center;
+    }
+    .author-text {
+        color: #004a99; font-weight: 600; font-size: 1.1rem; margin-top: -15px; margin-bottom: 25px;
     }
     .module-card {
         background: white; padding: 30px; border-radius: 20px;
@@ -41,47 +45,56 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. LOGIN ---
+# --- 2. LOGIN PAGE ---
 if not st.session_state.nama_dokter:
     st.markdown("<br><br>", unsafe_allow_html=True)
     col_l, col_m, col_r = st.columns([1, 1.5, 1])
     with col_m:
-        st.markdown("<div class='main-card'><h1 style='text-align: center; color: #004a99;'>🩺 SINTALA-STROKE</h1><p style='text-align: center; color: #6c757d;'>Verifikasi DPJP Tanah Laut</p></div>", unsafe_allow_html=True)
-        input_dr = st.text_input("Nama Lengkap Dokter:", placeholder="Contoh: dr. Faisal Bayu")
+        st.markdown("""
+            <div class='main-card'>
+                <h1 style='color: #004a99; margin-bottom: 0;'>🩺 SINTALA-STROKE</h1>
+                <p class='author-text'>by. dr. Faisal Bayu</p>
+                <p style='color: #6c757d; margin-bottom: 30px;'>Sistem Informasi & Analisa Stroke Terpadu</p>
+            </div>
+        """, unsafe_allow_html=True)
+        input_dr = st.text_input("Identitas Dokter Pemeriksa:", placeholder="Masukkan nama Anda...")
         if st.button("Masuk Ke Dashboard", use_container_width=True):
             if input_dr:
                 st.session_state.nama_dokter = input_dr
                 st.rerun()
     st.stop()
 
-# --- 3. DASHBOARD ---
+# --- 3. DASHBOARD UTAMA ---
 if st.session_state.pilihan_layanan is None:
-    st.markdown(f"## Dashboard Medis: {st.session_state.nama_dokter}")
+    st.markdown("<h1 style='color: #004a99; margin-bottom: 0;'>🩺 SINTALA-STROKE</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='font-weight: 600; color: #004a99; font-size: 1.2rem;'>by. dr. Faisal Bayu</p>", unsafe_allow_html=True)
+    st.write(f"Selamat bertugas, **{st.session_state.nama_dokter}**. Silakan pilih modul:")
+    
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown('<div class="module-card"><h3>📊 FSRP</h3><p>Profil Risiko Stroke 10 Tahun<br>(+ Faktor Kolesterol)</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="module-card"><h3>📊 FSRP</h3><p>Framingham Stroke Risk Profile<br>(Kolesterol Included)</p></div>', unsafe_allow_html=True)
         if st.button("Buka FSRP", use_container_width=True):
             st.session_state.pilihan_layanan = "FSRP"; st.rerun()
     with c2:
-        st.markdown('<div class="module-card" style="border-top-color: #dc3545;"><h3>🚨 NIHSS</h3><p>Evaluasi Defisit Neurologis<br>11 Poin Sesuai Panduan</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="module-card" style="border-top-color: #dc3545;"><h3>🚨 NIHSS</h3><p>Evaluasi Defisit Akut<br>11 Poin Lengkap</p></div>', unsafe_allow_html=True)
         if st.button("Buka NIHSS", use_container_width=True):
             st.session_state.pilihan_layanan = "NIHSS"; st.rerun()
     with c3:
-        st.markdown('<div class="module-card" style="border-top-color: #ff8c00;"><h3>🧠 SIRIRAJ</h3><p>Siriraj Stroke Score<br>Pembeda Jenis Stroke</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="module-card" style="border-top-color: #ff8c00;"><h3>🧠 SIRIRAJ</h3><p>Siriraj Stroke Score<br>Infark vs Hemoragik</p></div>', unsafe_allow_html=True)
         if st.button("Buka Siriraj", use_container_width=True):
             st.session_state.pilihan_layanan = "SIRIRAJ"; st.rerun()
     st.stop()
 
-# --- 4. SIDEBAR ---
+# --- 4. SIDEBAR & LOGIKA MODUL ---
+# (Bagian ini tetap sama dengan versi v2.0 yang sudah komplit dengan FSRP+Kolesterol, NIHSS, dan Siriraj)
 with st.sidebar:
-    st.title("SINTALA")
+    st.markdown("<h3>SINTALA</h3>", unsafe_allow_html=True)
     st.write(f"DPJP: **{st.session_state.nama_dokter}**")
     if st.button("🔄 Menu Utama"):
         st.session_state.pilihan_layanan = None
         st.rerun()
     st.divider()
-    st.markdown('<button onclick="window.print()" style="width: 100%; height: 3.5em; background: #28a745; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;">🖨️ Cetak Laporan</button>', unsafe_allow_html=True)
-
+    st.caption("Developed by dr. Faisal Bayu")
 # --- 5. MODUL FSRP (DENGAN KOLESTEROL) ---
 if st.session_state.pilihan_layanan == "FSRP":
     st.header("📊 Framingham Stroke Risk Profile")
