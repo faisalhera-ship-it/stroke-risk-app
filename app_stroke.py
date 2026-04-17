@@ -8,10 +8,14 @@ st.set_page_config(page_title="SINTALA-STROKE by dr. Faisal", layout="wide")
 # --- SETUP AI CLOUD ---
 import os
 
-# Mengambil key dari Secrets Streamlit
-api_key = st.secrets["GOOGLE_API_KEY"]
-genai.configure(api_key=api_key)
+# Membaca kunci dari pengaturan Secrets Streamlit
+if "GOOGLE_API_KEY" in st.secrets:
+    api_key = st.secrets["GOOGLE_API_KEY"]
+else:
+    # Fallback untuk running lokal
+    api_key = "AQ.Ab8RN6IBQDEmVnPd3ZuUOnxiM1zjTQlJ5mDg0LeWW_oIvzB6-g"
 
+genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
 # --- CUSTOM CSS UNTUK PRINT ---
 st.markdown("""
