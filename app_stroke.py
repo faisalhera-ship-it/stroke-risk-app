@@ -53,7 +53,7 @@ if not st.session_state.nama_dokter:
     st.markdown("<br><br>", unsafe_allow_html=True)
     _, col_m, _ = st.columns([1, 1.5, 1])
     with col_m:
-        st.markdown("""
+        st.markdown(f"""
             <div class='hero-card'>
                 <h1 style='color: #004a99; margin: 0;'>🩺 SINTALA-STROKE</h1>
                 <p class='author-badge'>by. dr. Faisal Bayu</p>
@@ -69,7 +69,7 @@ if not st.session_state.nama_dokter:
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
-    st.markdown(f"### DPJP: \n**{st.session_state.nama_dokter}**")
+    st.markdown(f"### DPJP: \\n**{st.session_state.nama_dokter}**")
     if st.button("🏠 Menu Utama", use_container_width=True):
         st.session_state.pilihan_layanan = None
         st.rerun()
@@ -83,14 +83,17 @@ if st.session_state.pilihan_layanan is None:
     st.markdown("### Dashboard Medis")
     c1, c2, c3 = st.columns(3)
     with c1:
-        if st.button("📊 FSRP \n(Risiko 10 Thn)", use_container_width=True, height=100):
-            st.session_state.pilihan_layanan = "FSRP"; st.rerun()
+        if st.button("📊 FSRP \\n(Risiko 10 Thn)", use_container_width=True, height=100):
+            st.session_state.pilihan_layanan = "FSRP"
+            st.rerun()
     with c2:
-        if st.button("🚨 NIHSS \n(Defisit Akut)", use_container_width=True, height=100):
-            st.session_state.pilihan_layanan = "NIHSS"; st.rerun()
+        if st.button("🚨 NIHSS \\n(Defisit Akut)", use_container_width=True, height=100):
+            st.session_state.pilihan_layanan = "NIHSS"
+            st.rerun()
     with c3:
-        if st.button("🧠 SIRIRAJ \n(Diagnostik)", use_container_width=True, height=100):
-            st.session_state.pilihan_layanan = "SIRIRAJ"; st.rerun()
+        if st.button("🧠 SIRIRAJ \\n(Diagnostik)", use_container_width=True, height=100):
+            st.session_state.pilihan_layanan = "SIRIRAJ"
+            st.rerun()
     st.stop()
 
 # --- 6. MODUL FSRP ---
@@ -111,8 +114,8 @@ if st.session_state.pilihan_layanan == "FSRP":
 
     if submit_fsrp:
         p_kol = 2 if kol >= 200 else 0
-        skor = sum([usia*2, (tds>=140)*3, smk*3, dm*2, ("PJK" in jantung)*2, ("AF" in jantung)*4, ("LVH (EKG)" in jantung)*5, p_kol])
-        kat = "TINGGI" if skor >= 7 else "RENDAH"
+        skor_fsrp = sum([usia*2, (tds>=140)*3, smk*3, dm*2, ("PJK" in jantung)*2, ("AF" in jantung)*4, ("LVH (EKG)" in jantung)*5, p_kol])
+        kat_fsrp = "TINGGI" if skor_fsrp >= 7 else "RENDAH"
         
         st.markdown(f"""
             <div class="print-area">
@@ -123,8 +126,8 @@ if st.session_state.pilihan_layanan == "FSRP":
                 <br>
                 <p><b>DPJP:</b> {st.session_state.nama_dokter} | <b>Pasien:</b> {p_nama} | <b>Tgl:</b> {datetime.now().strftime('%d/%m/%Y')}</p>
                 <div class="score-box">
-                    <h2 style="margin: 0;">TOTAL SKOR: {skor}</h2>
-                    <h1 style="margin: 5px; color: {'#dc2626' if kat == 'TINGGI' else '#16a34a'};">RISIKO: {kat}</h1>
+                    <h2 style="margin: 0;">TOTAL SKOR: {skor_fsrp}</h2>
+                    <h1 style="margin: 5px; color: {'#dc2626' if kat_fsrp == 'TINGGI' else '#16a34a'};">RISIKO: {kat_fsrp}</h1>
                 </div>
                 <div style="margin-top: 50px; text-align: right;">( {st.session_state.nama_dokter} )</div>
             </div>
@@ -134,7 +137,7 @@ if st.session_state.pilihan_layanan == "FSRP":
 elif st.session_state.pilihan_layanan == "NIHSS":
     st.header("🚨 National Institutes of Health Stroke Scale")
     with st.form("nihss_form"):
-        p_nama = st.text_input("Nama Pasien", "Pasien Anonim")
+        p_nama_nihss = st.text_input("Nama Pasien", "Pasien Anonim")
         c1, c2 = st.columns(2)
         with c1:
             n1a = st.selectbox("1a. LOC", ["0: Sadar", "1: Mengantuk", "2: Stupor", "3: Koma"])
@@ -154,8 +157,8 @@ elif st.session_state.pilihan_layanan == "NIHSS":
         submit_nihss = st.form_submit_button("HITUNG TOTAL NIHSS", use_container_width=True)
 
     if submit_nihss:
-        total = sum([int(x[0]) for x in [n1a, n1b, n1c, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11]])
-        kat = "Stroke Ringan" if total <= 4 else "Stroke Sedang" if total <= 15 else "Stroke Berat"
+        total_nihss = sum([int(x[0]) for x in [n1a, n1b, n1c, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11]])
+        kat_nihss = "Stroke Ringan" if total_nihss <= 4 else "Stroke Sedang" if total_nihss <= 15 else "Stroke Berat"
         st.markdown(f"""
             <div class="print-area">
                 <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px;">
@@ -163,10 +166,10 @@ elif st.session_state.pilihan_layanan == "NIHSS":
                     <h4 style="margin: 0; color: #004a99;">SINTALA-STROKE by. dr. Faisal Bayu</h4>
                 </div>
                 <br>
-                <p><b>Pasien:</b> {p_nama} | <b>DPJP:</b> {st.session_state.nama_dokter}</p>
+                <p><b>Pasien:</b> {p_nama_nihss} | <b>DPJP:</b> {st.session_state.nama_dokter}</p>
                 <div class="score-box">
-                    <h1 style="margin: 0; font-size: 45px;">TOTAL SKOR: {total}</h1>
-                    <h3 style="margin: 0;">KATEGORI: {kat.upper()}</h3>
+                    <h1 style="margin: 0; font-size: 45px;">TOTAL SKOR: {total_nihss}</h1>
+                    <h3 style="margin: 0;">KATEGORI: {kat_nihss.upper()}</h3>
                 </div>
                 <div style="margin-top: 50px; text-align: right;">( {st.session_state.nama_dokter} )</div>
             </div>
@@ -176,7 +179,7 @@ elif st.session_state.pilihan_layanan == "NIHSS":
 elif st.session_state.pilihan_layanan == "SIRIRAJ":
     st.header("🧠 Siriraj Stroke Score")
     with st.form("sss_form"):
-        p_nama = st.text_input("Nama Pasien", "Pasien Anonim")
+        p_nama_sss = st.text_input("Nama Pasien", "Pasien Anonim")
         c1, c2 = st.columns(2)
         with c1:
             kes = st.selectbox("Kesadaran", ["0: Sadar", "1: Somnolen", "2: Koma"])
@@ -200,7 +203,7 @@ elif st.session_state.pilihan_layanan == "SIRIRAJ":
                 <div class="score-box">
                     <h2 style="margin: 0; color: #dc2626;">DIAGNOSA KLINIS:</h2>
                     <h1 style="margin: 10px;">{diag}</h1>
-                    <p>Skor: {sss:.2f}</p>
+                    <p>Skor Siriraj: {sss:.2f}</p>
                 </div>
                 <div style="margin-top: 50px; text-align: right;">( {st.session_state.nama_dokter} )</div>
             </div>
