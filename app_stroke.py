@@ -1,53 +1,66 @@
 import streamlit as st
 from datetime import datetime
 
-# --- 1. SESSION STATE ---
+# --- 1. SESSION STATE & CONFIG ---
 if 'nama_dokter' not in st.session_state:
     st.session_state.nama_dokter = ""
 if 'pilihan_layanan' not in st.session_state:
     st.session_state.pilihan_layanan = None
 
-# --- CONFIG HALAMAN ---
 st.set_page_config(page_title="SINTALA-STROKE", layout="wide", page_icon="🩺")
 
-# --- CUSTOM CSS (PREMIUM DASHBOARD) ---
+# --- 2. CSS FIX (ANTI KEPOTONG & AUTO-A4) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
     * { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* Layout Utama */
     .stApp { background-color: #f8fafc; }
     
-    /* Login & Header Card */
+    /* CSS KHUSUS PRINT - PERBAIKAN TOTAL */
+    @media print {
+        /* Sembunyikan elemen pengganggu */
+        header, footer, .no-print, [data-testid="stSidebar"], [data-testid="stHeader"], .stButton, button {
+            display: none !important;
+        }
+        
+        /* Reset margin aplikasi agar tidak geser */
+        .block-container { 
+            padding-top: 0rem !important; 
+            padding-bottom: 0rem !important; 
+            padding-left: 0rem !important;
+            padding-right: 0rem !important;
+        }
+
+        /* Paksa area print pas di A4 */
+        .print-area {
+            width: 100% !important;
+            max-width: 210mm !important; /* Standar Lebar A4 */
+            margin: 0 auto !important;
+            padding: 10mm !important;
+            border: none !important;
+            box-shadow: none !important;
+            display: block !important;
+        }
+
+        .score-box {
+            background-color: #f1f5f9 !important;
+            -webkit-print-color-adjust: exact; /* Paksa warna muncul */
+            border: 1px solid #004a99 !important;
+            text-align: center !important;
+        }
+    }
+
+    .score-box {
+        background-color: #f1f5f9; padding: 25px; border-radius: 12px;
+        border: 2px solid #004a99; text-align: center; margin: 20px 0;
+    }
+    
     .hero-card {
         background: white; padding: 40px; border-radius: 24px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #e2e8f0;
         text-align: center; margin-bottom: 20px;
-    }
-    .author-badge {
-        color: #004a99; font-weight: 700; font-size: 1.2rem;
-        margin-top: -10px; margin-bottom: 20px;
-    }
-    
-    /* Module Navigation */
-    .module-box {
-        background: white; padding: 30px; border-radius: 20px;
-        border-top: 6px solid #004a99; transition: 0.3s;
-        text-align: center; height: 100%;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    }
-    .module-box:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.08); }
-    
-    /* Report Styling */
-    .report-frame {
-        background: white; padding: 40px; border-radius: 15px;
-        border: 2px solid #004a99; color: black; margin-top: 25px;
-    }
-
-    /* Print Optimization */
-    @media print {
-        .no-print, [data-testid="stSidebar"], .stButton, header, footer { display: none !important; }
-        .report-frame { border: none !important; padding: 0 !important; }
-        .stMarkdown { display: block !important; }
     }
     </style>
     """, unsafe_allow_html=True)
