@@ -1,127 +1,129 @@
 import streamlit as st
-from datetime import datetime
 import urllib.parse
+from datetime import datetime
 
-# --- 1. CONFIG & STYLE ---
-st.set_page_config(page_title="SINTALA-STROKE v3.2", layout="wide", page_icon="🩺")
+# --- CONFIG ---
+st.set_page_config(page_title="SINTALA v3.5", layout="wide", page_icon="🩺")
 
+# --- CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
     * { font-family: 'Plus Jakarta Sans', sans-serif; }
     .stApp { background-color: #f8fafc; }
-    .report-card { 
-        background: white; padding: 30px; border-radius: 15px; 
-        border: 2px solid #004a99; margin-top: 20px; 
+    .wa-btn {
+        display: block; width: 100%; padding: 15px; background-color: #25D366;
+        color: white; text-align: center; font-weight: bold; border-radius: 12px;
+        text-decoration: none; margin-top: 15px;
     }
-    .stButton>button { border-radius: 10px; font-weight: 600; }
+    .soap-box { background: white; padding: 20px; border-radius: 15px; border: 2px solid #004a99; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. HELPER FUNCTIONS ---
-def get_wa_link(phone, message):
-    phone = "".join(filter(str.isdigit, phone))
-    if phone.startswith("0"): phone = "62" + phone[1:]
-    return f"https://wa.me/{phone}?text={urllib.parse.quote(message)}"
+# --- FUNGSI HELPER ---
+def wa_link(nomor, pesan):
+    no = "".join(filter(str.isdigit, nomor))
+    if no.startswith("0"): no = "62" + no[1:]
+    return f"https://wa.me/{no}?text={urllib.parse.quote(pesan)}"
 
-# --- 3. SESSION STATE ---
-if 'pilihan' not in st.session_state: st.session_state.pilihan = None
-if 'nama_dr' not in st.session_state: st.session_state.nama_dr = ""
+# --- SESSION STATE ---
+if 'dr' not in st.session_state: st.session_state.dr = ""
+if 'menu' not in st.session_state: st.session_state.menu = None
 
-# --- 4. LOGIN ---
-if not st.session_state.nama_dr:
+# --- LOGIN ---
+if not st.session_state.dr:
     _, col, _ = st.columns([1, 1.2, 1])
     with col:
         st.markdown("<h2 style='text-align:center;'>🩺 SINTALA-STROKE</h2>", unsafe_allow_html=True)
-        name = st.text_input("Identitas Dokter (DPJP):", placeholder="dr. Faisal Bayu")
-        if st.button("Masuk Sistem", use_container_width=True):
-            if name: st.session_state.nama_dr = name; st.rerun()
+        nama = st.text_input("Nama Dokter (DPJP):", placeholder="dr. Faisal Bayu")
+        if st.button("Masuk"):
+            if nama: st.session_state.dr = nama; st.rerun()
     st.stop()
 
-# --- 5. SIDEBAR & MENU ---
+# --- SIDEBAR ---
 with st.sidebar:
-    st.title("SINTALA v3.2")
-    st.write(f"DPJP: **{st.session_state.nama_dr}**")
+    st.write(f"DPJP: **{st.session_state.dr}**")
     if st.button("🏠 Menu Utama", use_container_width=True):
-        st.session_state.pilihan = None; st.rerun()
-    st.divider()
-    st.caption("Developed for Tanah Laut Healthcare")
+        st.session_state.menu = None; st.rerun()
 
-if st.session_state.pilihan is None:
-    st.subheader("Pilih Instrumen Analisa:")
+# --- MENU UTAMA ---
+if st.session_state.menu is None:
     c1, c2, c3 = st.columns(3)
     with c1: 
-        if st.button("📊 FSRP\n(Skrining)", use_container_width=True, height=100): st.session_state.pilihan = "FSRP"; st.rerun()
+        if st.button("📊 FSRP", use_container_width=True, height=100): st.session_state.menu = "FSRP"; st.rerun()
     with c2: 
-        if st.button("🚨 NIHSS\n(Emergency)", use_container_width=True, height=100): st.session_state.pilihan = "NIHSS"; st.rerun()
+        if st.button("🚨 NIHSS", use_container_width=True, height=100): st.session_state.menu = "NIHSS"; st.rerun()
     with c3: 
-        if st.button("🧠 SIRIRAJ\n(Diagnostik)", use_container_width=True, height=100): st.session_state.pilihan = "SIRIRAJ"; st.rerun()
+        if st.button("🧠 SIRIRAJ", use_container_width=True, height=100): st.session_state.menu = "SIRIRAJ"; st.rerun()
     st.stop()
 
-# --- 6. MODUL FSRP (DENGAN KALKULATOR) ---
-if st.session_state.pilihan == "FSRP":
-    st.header("📊 Kalkulator FSRP & Edukasi")
-    with st.form("fsrp_calc"):
-        col1, col2 = st.columns(2)
-        with col1:
-            p_nama = st.text_input("Nama Pasien")
-            p_wa = st.text_input("Nomor WA Pasien (08...)")
-            usia = st.checkbox("Usia ≥ 55 Tahun")
-            tds = st.number_input("TD Sistolik", 90, 220, 120)
-        with col2:
-            smk = st.checkbox("Merokok")
-            dm = st.checkbox("Diabetes")
-            jantung = st.checkbox("Riwayat Penyakit Jantung (AF/PJK)")
-            kol = st.checkbox("Kolesterol > 200")
+# --- MODUL NIHSS (11 PARAMETER) ---
+if st.session_state.menu == "NIHSS":
+    st.header("🚨 NIHSS Scoring (National Institutes of Health Stroke Scale)")
+    with st.form("nihss_form"):
+        p_nama = st.text_input("Nama Pasien")
+        p_wa = st.selectbox("RS Tujuan", ["RSUD H. Boejasin", "RS Borneo Citra", "RS Ciputra"])
         
-        btn = st.form_submit_button("Hitung Skor & Siapkan WA")
-
-    if btn:
-        skor = sum([usia*2, (tds>=140)*3, smk*3, dm*2, jantung*4, kol*2])
-        risiko = "TINGGI" if skor >= 7 else "RENDAH"
-        
-        msg = (f"*HASIL SKRINING SINTALA*\n\nHalo {p_nama}, risiko stroke Anda saat ini: *{risiko}* (Skor:{skor}).\n\n"
-               f"*Edukasi Dokter:*\n1. Kontrol tensi rutin\n2. Kurangi garam & lemak\n3. Olahraga 30 menit/hari\n\n"
-               f"Jika ada keluhan bicara pelo atau lemah separuh badan, segera ke RS!")
-        
-        st.markdown(f"<div class='report-card'><h3>Hasil: Risiko {risiko}</h3><p>Total Skor: {skor}</p></div>", unsafe_allow_html=True)
-        st.markdown(f'<a href="{get_wa_link(p_wa, msg)}" target="_blank"><button style="width:100%; padding:12px; background:#25D366; color:white; border:none; border-radius:10px; cursor:pointer;">📲 KIRIM HASIL KE WA PASIEN</button></a>', unsafe_allow_html=True)
-
-# --- 7. MODUL NIHSS & SIRIRAJ (DENGAN FORMAT SOAP) ---
-elif st.session_state.pilihan in ["NIHSS", "SIRIRAJ"]:
-    st.header(f"🚨 Form Emergency {st.session_state.pilihan}")
-    with st.form("emergency_soap"):
         c1, c2 = st.columns(2)
         with c1:
-            p_nama = st.text_input("Nama Pasien")
-            p_umur = st.text_input("Umur")
-            onset = st.text_input("Onset (Jam)")
-            rs_tujuan = st.selectbox("RS Tujuan", ["RSUD H. Boejasin", "RS Borneo Citra", "RS Ciputra"])
+            n1 = st.selectbox("1a. Kesadaran (LOC)", [0,1,2,3], format_func=lambda x: f"{x} - {'Sadar' if x==0 else 'Somnolen' if x==1 else 'Stupor' if x==2 else 'Koma'}")
+            n2 = st.selectbox("1b. Tanya LOC (Bulan/Usia)", [0,1,2], format_func=lambda x: f"{x} - {'Benar Semua' if x==0 else '1 Benar' if x==1 else 'Salah Semua'}")
+            n3 = st.selectbox("2. Gerakan Mata (Gaze)", [0,1,2])
+            n4 = st.selectbox("3. Lapang Pandang (Visual)", [0,1,2,3])
+            n5 = st.selectbox("4. Kelumpuhan Wajah", [0,1,2,3])
+            n6 = st.selectbox("5a/b. Motorik Lengan (Ka/Ki)", [0,1,2,3,4])
         with c2:
-            td = st.text_input("TD (mmHg)", "140/90")
-            nadi = st.text_input("Nadi", "88")
-            gcs = st.text_input("GCS", "E4V5M6")
-            lat = st.selectbox("Lateralisasi", ["Kiri", "Kanan", "Tidak Ada"])
-        
-        keluhan = st.text_area("Subjek: Keluhan & Riwayat")
-        
-        # Logika Skor (Dokter bisa isi manual dari hasil pemeriksaan)
-        skor_val = st.number_input(f"Input Skor {st.session_state.pilihan} Terhitung", 0, 42, 0)
-        plan = st.text_area("Plan: Tindakan/Terapi", "O2 3LPM, IVFD RL 20tpm, Loading Aspilet...")
-        
-        btn_soap = st.form_submit_button("Generate WA SOAP")
+            n7 = st.selectbox("6a/b. Motorik Tungkai (Ka/Ki)", [0,1,2,3,4])
+            n8 = st.selectbox("7. Ataksia Anggota Gerak", [0,1,2])
+            n9 = st.selectbox("8. Sensorik", [0,1,2])
+            n10 = st.selectbox("9. Bahasa (Afasia)", [0,1,2,3])
+            n11 = st.selectbox("10. Disartria", [0,1,2])
+            n12 = st.selectbox("11. Pengabaian (Neglect)", [0,1,2])
 
-    if btn_soap:
-        # Daftar Nomor IGD (Silakan update nomor aslinya, Dok)
-        igd_numbers = {"RSUD H. Boejasin": "0811000", "RS Borneo Citra": "0811111", "RS Ciputra": "0811222"}
+        sub = st.text_area("Subjek: Keluhan & Onset")
+        submit = st.form_submit_button("HITUNG SKOR & GENERATE SOAP")
+
+    if submit:
+        total = sum([n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12])
+        kat = "Ringan" if total <= 4 else "Sedang" if total <= 15 else "Sedang-Berat" if total <= 24 else "Berat"
         
-        soap_msg = (
-            f"*RUJUKAN EMERGENCY STROKE*\n"
-            f"Tujuan: *IGD {rs_tujuan}*\n\n"
-            f"*S:* {p_nama} ({p_umur}th). {keluhan}. Onset {onset}.\n"
-            f"*O:* TD:{td}, HR:{nadi}, GCS:{gcs}, Lat:{lat}. Skor {st.session_state.pilihan}:{skor_val}\n"
-            f"*A:* Suspek Stroke (Rujukan Puskesmas)\n"
-            f"*P:* {plan}\n\n"
-            f"Mohon atensi dok. Terimakasih."
-        )
-        st.markdown(f'<a href="{get_wa_link(igd_numbers[rs_tujuan], soap_msg)}" target="_blank"><button style="width:100%; padding:15px; background:#dc2626; color:white; border:none; border-radius:12px; cursor:pointer;">🚨 KIRIM WA SOAP KE IGD RS</button></a>', unsafe_allow_html=True)
+        soap = (f"*RUJUKAN STROKE (NIHSS)*\nKe: IGD {p_wa}\n\n"
+                f"*S:* {p_nama}. {sub}\n"
+                f"*O:* Skor NIHSS: {total} ({kat})\n"
+                f"*A:* Suspek Stroke Akut\n"
+                f"*P:* Mohon persiapan CT-Scan & Tirah Baring.")
+        
+        st.success(f"Skor NIHSS: {total} - {kat}")
+        st.markdown(f'<a href="{wa_link("0811000", soap)}" target="_blank" class="wa-btn" style="background:#dc2626;">🚨 KIRIM WA SOAP KE IGD</a>', unsafe_allow_html=True)
+
+# --- MODUL SIRIRAJ ---
+elif st.session_state.menu == "SIRIRAJ":
+    st.header("🧠 Siriraj Stroke Score (SSS)")
+    st.info("SSS = (2.5 x Derajat Kesadaran) + (2 x Muntah) + (2 x Nyeri Kepala) + (0.1 x TD Diastolik) - (3 x Atheroma) - 12")
+    with st.form("sss_form"):
+        p_nama = st.text_input("Nama Pasien")
+        c1, c2 = st.columns(2)
+        with c1:
+            sadar = st.selectbox("Derajat Kesadaran", [0, 1, 2], format_func=lambda x: f"{x} - {'Sadar' if x==0 else 'Mengantuk' if x==1 else 'Koma'}")
+            muntah = st.radio("Muntah (dalam 2 jam)", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
+            nyeri = st.radio("Nyeri Kepala (dalam 2 jam)", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
+        with col2:
+            diastolik = st.number_input("Tekanan Darah Diastolik", 60, 150, 90)
+            atheroma = st.radio("Atheroma (DM/PJK/Klaudikasio)", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
+        
+        sub_sss = st.text_area("Keluhan Tambahan")
+        btn_sss = st.form_submit_button("HITUNG SIRIRAJ")
+
+    if btn_sss:
+        # Rumus Siriraj
+        skor_sss = (2.5 * sadar) + (2 * muntah) + (2 * nyeri) + (0.1 * diastolik) - (3 * atheroma) - 12
+        hasil = "Stroke Hemoragik (SH)" if skor_sss > 1 else "Stroke Iskemik (SS)" if skor_sss < -1 else "Meragukan (Perlu CT-Scan)"
+        
+        soap_sss = (f"*RUJUKAN STROKE (SIRIRAJ)*\n\n"
+                    f"*S:* {p_nama}. {sub_sss}\n"
+                    f"*O:* Skor Siriraj: {skor_sss:.1f} ({hasil})\n"
+                    f"*A:* {hasil}\n"
+                    f"*P:* Rujuk untuk CT-Scan segera.")
+        
+        st.markdown(f"<div class='soap-box'><h3>Skor: {skor_sss:.1f}</h3><h4>Prediksi: {hasil}</h4></div>", unsafe_allow_html=True)
+        st.markdown(f'<a href="{wa_link("0811000", soap_sss)}" target="_blank" class="wa-btn">🚨 KIRIM WA KE IGD</a>', unsafe_allow_html=True)
