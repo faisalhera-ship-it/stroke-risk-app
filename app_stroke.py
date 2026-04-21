@@ -20,7 +20,7 @@ def kirim_wa(nomor, pesan):
     return f"https://wa.me/{no}?text={urllib.parse.quote(pesan)}"
 
 RS_LIST = {
-    "RSUD H. Boejasin Pelaihari": "08123456789",
+    "RSUD H. Boejasin Pelaihari": "082350509879",
     "RS Ciputra Banjarmasin": "08110000000",
     "RSUD Ulin Banjarmasin": "08115555555"
 }
