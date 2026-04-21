@@ -2,69 +2,125 @@ import streamlit as st
 import urllib.parse
 from datetime import datetime
 
-# --- CONFIG & STYLES ---
-st.set_page_config(page_title="SINTALA v5.4", layout="wide", page_icon="🩺")
+# --- 1. SETUP UI & CSS ---
+st.set_page_config(page_title="SINTALA v5.7", layout="wide", page_icon="🩺")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #f4f7f9; }
-    .wa-card { background: white; padding: 20px; border-radius: 15px; border-left: 10px solid #25D366; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
-    .print-container { 
-        background: white; padding: 40px; border: 2px solid #333; border-radius: 5px; 
-        color: black; font-family: 'Courier New', Courier, monospace; line-height: 1.2;
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+    * { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    div.stButton > button {
+        height: 70px !important;
+        font-size: 18px !important;
+        font-weight: bold !important;
+        border-radius: 12px !important;
+        margin-bottom: 10px;
     }
-    .stButton>button { border-radius: 10px; height: 3.5em; font-weight: bold; }
+    
+    .print-report {
+        background-color: white; padding: 40px; border: 2px solid #333;
+        border-radius: 8px; color: black; line-height: 1.5; margin-top: 20px;
+    }
+    .kop-surat { text-align: center; border-bottom: 4px double #333; margin-bottom: 20px; }
     
     @media print {
-        .no-print, .stSidebar, header, footer, .stButton, .wa-card { display: none !important; }
-        .print-container { border: none !important; padding: 0 !important; width: 100% !important; }
+        .no-print, header, footer, [data-testid="stSidebar"], .stButton, [data-testid="stHeader"] {
+            display: none !important;
+        }
+        .print-report { border: none !important; padding: 0 !important; width: 100% !important; }
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- HELPER FUNCTIONS ---
-def kirim_wa(nomor, pesan):
-    no = "".join(filter(str.isdigit, nomor))
-    if no.startswith("0"): no = "62" + no[1:]
-    return f"https://wa.me/{no}?text={urllib.parse.quote(pesan)}"
-
-RS_LIST = {
-    "RSUD H. Boejasin Pelaihari": "08123456789",
-    "RS Ciputra Banjarmasin": "08110000000",
-    "RSUD Ulin Banjarmasin": "08115555555"
-}
-
-# --- SESSION STATE ---
+# --- 2. SESSION STATE ---
 if 'dr' not in st.session_state: st.session_state.dr = ""
 if 'menu' not in st.session_state: st.session_state.menu = "Home"
 
-# --- LOGIN ---
+# --- 3. LOGIN ---
 if not st.session_state.dr:
     _, col, _ = st.columns([1, 1.5, 1])
     with col:
         st.markdown("<h1 style='text-align:center; color:#004a99;'>🩺 SINTALA</h1>", unsafe_allow_html=True)
-        dr_name = st.text_input("Nama Dokter Pemeriksa:")
+        dr_input = st.text_input("Nama Dokter Pemeriksa:")
         if st.button("Masuk Dashboard", use_container_width=True):
-            if dr_name: st.session_state.dr = dr_name; st.rerun()
+            if dr_input:
+                st.session_state.dr = dr_input
+                st.rerun()
     st.stop()
 
-# --- SIDEBAR ---
+# --- 4. SIDEBAR ---
 with st.sidebar:
     st.write(f"DPJP: **{st.session_state.dr}**")
-    if st.button("🏠 Menu Utama"): st.session_state.menu = "Home"; st.rerun()
-    st.divider()
-    st.info("Tips: Setelah laporan muncul, tekan Ctrl+P untuk cetak.")
+    if st.button("🏠 Menu Utama", use_container_width=True): 
+        st.session_state.menu = "Home"
+        st.rerun()
+    st.info("Gunakan Ctrl+P untuk print laporan ke PDF/Kertas.")
 
-# --- MENU UTAMA ---
+# --- 5. MENU UTAMA ---
 if st.session_state.menu == "Home":
-    st.subheader("Instrumen Klinis Digital")
+    st.subheader("Instrumen Klinis Stroke")
     c1, c2, c3 = st.columns(3)
     with c1:
-        if st.button("📊 FSRP\n(Skrining & Edukasi)", use_container_width=True): st.session_state.menu = "FSRP"; st.rerun()
+        if st.button("📊 FSRP\n(Skrining & CVD)", use_container_width=True): st.session_state.menu = "FSRP"; st.rerun()
     with c2:
-        if st.button("🚨 NIHSS\n(Full SOAP & Print)", use_container_width=True): st.session_state.menu = "NIHSS"; st.rerun()
+        if st.button("🚨 NIHSS\n(Emergency)", use_container_width=True): st.session_state.menu = "NIHSS"; st.rerun()
     with c3:
-        if st.button("🧠 SIRIRAJ\n(Full SOAP & Print)", use_container_width=True): st.session_state.menu = "SIRIRAJ"; st.rerun()
+        if st.button("🧠 SIRIRAJ\n(Diagnostik)", use_container_width=True): st.session_state.menu = "SIRIRAJ"; st.rerun()
+
+# --- 6. MODUL FSRP (UPDATED: JANTUNG & PRINT) ---
+elif st.session_state.menu == "FSRP":
+    st.header("📊 Framingham Stroke Risk Profile (FSRP)")
+    with st.form("form_fsrp"):
+        p_nama = st.text_input("Nama Pasien")
+        p_umur = st.number_input("Umur (30-90 th)", 30, 90, 50)
+        c1, c2 = st.columns(2)
+        with c1:
+            tds = st.number_input("TD Sistolik (mmHg)", 90, 220, 120)
+            chol = st.number_input("Total Kolesterol (mg/dL)", 100, 500, 200)
+            dm = st.selectbox("Diabetes Mellitus", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
+        with c2:
+            smoke = st.selectbox("Merokok", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
+            cvd = st.selectbox("Penyakit Jantung (CVD/PJK/AF)", [0, 1], 
+                                format_func=lambda x: "Tidak Ada" if x==0 else "Ada (Riwayat PJK/Gagal Jantung/AF)")
+            lvh = st.selectbox("LVH (Hasil EKG)", [0, 1], format_func=lambda x: "Tidak Ada" if x==0 else "Ada")
+        
+        submit_fsrp = st.form_submit_button("Analisis Risiko & Generate Laporan")
+
+    if submit_fsrp:
+        # Logika Prediksi Sederhana untuk Resume
+        risiko = "Tinggi" if tds > 160 or dm == 1 or cvd == 1 else "Sedang" if tds > 140 or chol > 240 else "Rendah"
+        tgl_skrg = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+        # Preview Laporan Siap Cetak
+        st.markdown(f"""
+            <div class="print-report">
+                <div class="kop-surat">
+                    <h2 style="margin:0;">HASIL SKRINING RISIKO STROKE (FSRP)</h2>
+                    <p style="margin:0;">Pemeriksa: {st.session_state.dr} | Waktu: {tgl_skrg}</p>
+                </div>
+                <p><b>DATA PASIEN:</b> {p_nama} ({p_umur} th)</p>
+                <hr>
+                <table style="width:100%; border-collapse: collapse;">
+                    <tr><td style="padding:5px;">TD Sistolik</td><td>: {tds} mmHg</td></tr>
+                    <tr><td style="padding:5px;">Total Kolesterol</td><td>: {chol} mg/dL</td></tr>
+                    <tr><td style="padding:5px;">Diabetes Mellitus</td><td>: {"Ya" if dm==1 else "Tidak"}</td></tr>
+                    <tr><td style="padding:5px;">Riwayat Penyakit Jantung</td><td>: {"Ada" if cvd==1 else "Tidak Ada"}</td></tr>
+                    <tr><td style="padding:5px;">Status Merokok</td><td>: {"Ya" if smoke==1 else "Tidak"}</td></tr>
+                    <tr><td style="padding:5px;">LVH (EKG)</td><td>: {"Positif" if lvh==1 else "Negatif"}</td></tr>
+                </table>
+                <hr>
+                <h3 style="color: #d9534f;">KESIMPULAN: RISIKO {risiko.upper()}</h3>
+                <p><i>Catatan: Hasil ini merupakan instrumen skrining awal. Segera konsultasikan lebih lanjut untuk manajemen faktor risiko.</i></p>
+                <br><br>
+                <p style="text-align:right;">Pemeriksa,<br><br><br><b>( {st.session_state.dr} )</b></p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Tombol WA Edukasi (Hanya muncul di web, tidak di print)
+        msg_wa = f"Hasil Skrining FSRP - Pasien: {p_nama}. Risiko Stroke: {risiko}. Mohon jaga pola makan dan kontrol rutin."
+        url_wa = "https://wa.me/?text=" + urllib.parse.quote(msg_wa)
+        st.markdown(f'<div class="no-print"><a href="{url_wa}" target="_blank" style="text-decoration:none;"><div style="background-color:#25D366; color:white; padding:15px; border-radius:10px; text-align:center; font-weight:bold;">📲 KIRIM EDUKASI KE PASIEN (WA)</div></a></div>', unsafe_allow_html=True)
 
 # --- MODUL NIHSS (DESKRIPTIF + PRINT) ---
 elif st.session_state.menu == "NIHSS":
@@ -163,23 +219,3 @@ elif st.session_state.menu == "SIRIRAJ":
                 <p style="text-align:right;">Pemeriksa: {st.session_state.dr}</p>
             </div>
             """, unsafe_allow_html=True)
-
-# --- MODUL FSRP ---
-elif st.session_state.menu == "FSRP":
-    st.header("📊 Framingham Stroke Risk Profile")
-    with st.form("fsrp_final"):
-        p_nama = st.text_input("Nama Pasien")
-        p_wa = st.text_input("No WA Pasien")
-        c1, c2 = st.columns(2)
-        with c1:
-            u = st.number_input("Umur", 30, 90, 50)
-            tds = st.number_input("TD Sistolik", 90, 220, 120)
-            chol = st.number_input("Total Kolesterol", 100, 500, 200)
-        with c2:
-            dm = st.selectbox("Diabetes", [0,1], format_func=lambda x: "Ya" if x==1 else "Tidak")
-            smoke = st.selectbox("Merokok", [0,1], format_func=lambda x: "Ya" if x==1 else "Tidak")
-        
-        if st.form_submit_button("Kirim Edukasi"):
-            res = "Perlu Perhatian Khusus" if tds > 140 or chol > 200 else "Risiko Terkontrol"
-            edukasi = f"Halo Bapak/Ibu {p_nama}, Hasil skrining FSRP Anda: {res}. Mohon jaga pola makan dan kontrol TD rutin."
-            st.markdown(f'<a href="{kirim_wa(p_wa, edukasi)}" target="_blank" class="wa-card">📲 KIRIM EDUKASI</a>', unsafe_allow_html=True)
