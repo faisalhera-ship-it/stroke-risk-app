@@ -1,204 +1,104 @@
 import streamlit as st
 from datetime import datetime
+import urllib.parse
 
-# --- 1. SESSION STATE & CONFIG ---
-if 'nama_dokter' not in st.session_state:
-    st.session_state.nama_dokter = ""
-if 'pilihan_layanan' not in st.session_state:
-    st.session_state.pilihan_layanan = None
+# --- 1. CONFIG & CSS ---
+st.set_page_config(page_title="SINTALA-STROKE v3.0", layout="wide", page_icon="🩺")
 
-st.set_page_config(page_title="SINTALA-STROKE", layout="wide", page_icon="🩺")
-
-# --- 2. CSS FIX (ANTI KEPOTONG & AUTO-A4) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
-    * { font-family: 'Plus Jakarta Sans', sans-serif; }
-    
-    /* Layout Utama */
     .stApp { background-color: #f8fafc; }
-    
-    /* CSS KHUSUS PRINT - PERBAIKAN TOTAL */
-    @media print {
-        /* Sembunyikan elemen pengganggu */
-        header, footer, .no-print, [data-testid="stSidebar"], [data-testid="stHeader"], .stButton, button {
-            display: none !important;
-        }
-        
-        /* Reset margin aplikasi agar tidak geser */
-        .block-container { 
-            padding-top: 0rem !important; 
-            padding-bottom: 0rem !important; 
-            padding-left: 0rem !important;
-            padding-right: 0rem !important;
-        }
-
-        /* Paksa area print pas di A4 */
-        .print-area {
-            width: 100% !important;
-            max-width: 210mm !important; /* Standar Lebar A4 */
-            margin: 0 auto !important;
-            padding: 10mm !important;
-            border: none !important;
-            box-shadow: none !important;
-            display: block !important;
-        }
-
-        .score-box {
-            background-color: #f1f5f9 !important;
-            -webkit-print-color-adjust: exact; /* Paksa warna muncul */
-            border: 1px solid #004a99 !important;
-            text-align: center !important;
-        }
-    }
-
-    .score-box {
-        background-color: #f1f5f9; padding: 25px; border-radius: 12px;
-        border: 2px solid #004a99; text-align: center; margin: 20px 0;
-    }
-    
-    .hero-card {
-        background: white; padding: 40px; border-radius: 24px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #e2e8f0;
-        text-align: center; margin-bottom: 20px;
-    }
+    .emergency-card { background: #fee2e2; padding: 20px; border-radius: 12px; border-left: 5px solid #dc2626; margin-bottom: 20px; }
+    .edu-card { background: #f0fdf4; padding: 20px; border-radius: 12px; border-left: 5px solid #16a34a; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. AUTHENTICATION ---
-if not st.session_state.nama_dokter:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    _, col_m, _ = st.columns([1, 1.5, 1])
-    with col_m:
-        st.markdown("""
-            <div class='hero-card'>
-                <h1 style='color: #004a99; margin: 0;'>🩺 SINTALA-STROKE</h1>
-                <p class='author-badge'>by. dr. Faisal Bayu</p>
-                <p style='color: #64748b;'>Sistem Informasi & Analisa Stroke Terpadu<br>Tanah Laut, Kalimantan Selatan</p>
-            </div>
-        """, unsafe_allow_html=True)
-        dr_name = st.text_input("Nama Lengkap DPJP:", placeholder="Contoh: dr. Faisal Bayu, Sp.N")
-        if st.button("Masuk Ke Dashboard", use_container_width=True):
-            if dr_name:
-                st.session_state.nama_dokter = dr_name
-                st.rerun()
-    st.stop()
-
-# --- 3. DASHBOARD SELECTOR ---
-if st.session_state.pilihan_layanan is None:
-    st.markdown(f"### Selamat Bertugas, {st.session_state.nama_dokter}")
-    st.write("Silakan pilih instrumen pemeriksaan:")
+# --- 2. FUNGSI KIRIM WA ---
+def send_wa(phone, message):
+    # Bersihkan nomor telepon (hilangkan spasi/tanda baca)
+    phone = "".join(filter(str.isdigit, phone))
+    if phone.startswith("0"):
+        phone = "62" + phone[1:]
     
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown('<div class="module-box"><h3>📊 FSRP</h3><p>Framingham Stroke Risk Profile<br>(Skrining Risiko 10 Tahun)</p></div>', unsafe_allow_html=True)
-        if st.button("Buka Modul FSRP", use_container_width=True):
-            st.session_state.pilihan_layanan = "FSRP"; st.rerun()
-    with c2:
-        st.markdown('<div class="module-box" style="border-top-color: #dc2626;"><h3>🚨 NIHSS</h3><p>National Institutes of Health<br>Stroke Scale (11 Poin Lengkap)</p></div>', unsafe_allow_html=True)
-        if st.button("Buka Modul NIHSS", use_container_width=True):
-            st.session_state.pilihan_layanan = "NIHSS"; st.rerun()
-    with c3:
-        st.markdown('<div class="module-box" style="border-top-color: #ea580c;"><h3>🧠 SIRIRAJ</h3><p>Siriraj Stroke Score<br>(Pembeda Infark vs Hemoragik)</p></div>', unsafe_allow_html=True)
-        if st.button("Buka Modul SIRIRAJ", use_container_width=True):
-            st.session_state.pilihan_layanan = "SIRIRAJ"; st.rerun()
-    st.stop()
+    encoded_msg = urllib.parse.quote(message)
+    wa_url = f"https://wa.me/{phone}?text={encoded_msg}"
+    return wa_url
 
-# --- 4. SIDEBAR NAVIGATION ---
-with st.sidebar:
-    st.markdown("<h2 style='color:#004a99;'>SINTALA-STROKE</h2>", unsafe_allow_html=True)
-    st.write(f"DPJP: **{st.session_state.nama_dokter}**")
-    if st.button("🔄 Kembali ke Menu Utama", use_container_width=True):
-        st.session_state.pilihan_layanan = None
-        st.rerun()
-    st.divider()
-    st.write("**Output Laporan:**")
-    st.markdown('<button onclick="window.print()" style="width:100%; height:3.5em; background:#16a34a; color:white; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">🖨️ CETAK / SAVE PDF</button>', unsafe_allow_html=True)
-    st.caption("Developed by dr. Faisal Bayu")
+# --- 3. SESSION STATE ---
+if 'pilihan' not in st.session_state: st.session_state.pilihan = None
 
-# --- 5. MODULE LOGIC ---
-
-# --- MODUL FSRP ---
-if st.session_state.pilihan_layanan == "FSRP":
-    st.header("📊 Modul FSRP (Faktor Risiko 10 Tahun)")
-    with st.form("fsrp_form"):
-        p_nama = st.text_input("Nama Pasien", "Pasien Anonim")
+# --- 4. MODUL FSRP (EDUKASI PASIEN) ---
+if st.session_state.pilihan == "FSRP":
+    st.header("📊 Screening FSRP & Edukasi Pasien")
+    with st.form("fsrp_wa"):
         col1, col2 = st.columns(2)
         with col1:
-            usia = st.checkbox("Usia ≥ 55 Tahun")
-            tds = st.number_input("TD Sistolik (mmHg)", 90, 250, 120)
-            kolesterol = st.number_input("Kolesterol Total (mg/dL)", 100, 500, 190)
+            nama = st.text_input("Nama Pasien")
+            wa_pasien = st.text_input("Nomor WA Pasien (Contoh: 0812...)")
+            skor = st.slider("Skor FSRP Terhitung", 0, 20, 5)
         with col2:
-            dm = st.checkbox("Diabetes Melitus")
-            smk = st.checkbox("Merokok Aktif")
-            jantung = st.multiselect("Riwayat Jantung", ["PJK", "AF", "LVH (EKG)"])
+            edukasi = st.multiselect("Pesan Edukasi Tambahan", 
+                                    ["Kurangi Garam", "Olahraga 30 Menit", "Kontrol Rutin Puskesmas", "Stop Rokok"])
         
-        submit_fsrp = st.form_submit_button("ANALISA FSRP", use_container_width=True)
+        if st.form_submit_button("Generate WA Edukasi"):
+            res = "TINGGI" if skor >= 7 else "RENDAH"
+            pesan_wa = (
+                f"*HASIL SKRINING STROKE - SINTALA*\n\n"
+                f"Halo Bapak/Ibu *{nama}*,\n"
+                f"Berdasarkan pemeriksaan hari ini, tingkat risiko stroke Anda adalah: *{res}* (Skor: {skor}).\n\n"
+                f"*Saran Dokter:*\n"
+                f"- {', '.join(edukasi) if edukasi else 'Tetap jaga pola hidup sehat'}\n\n"
+                f"Segera ke fasilitas kesehatan jika muncul gejala *SeGeRa Ke RS* (Senyum miring, Gerak lemah, Bicara pelo). Tetap semangat!"
+            )
+            st.markdown(f'<a href="{send_wa(wa_pasien, pesan_wa)}" target="_blank"><button style="width:100%; padding:10px; background:#25D366; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">📲 KIRIM EDUKASI KE WA PASIEN</button></a>', unsafe_allow_html=True)
+
+# --- 5. MODUL EMERGENCY (NIHSS & SIRIRAJ - WA SOAP) ---
+elif st.session_state.pilihan in ["NIHSS", "SIRIRAJ"]:
+    st.header(f"🚨 Rujukan Emergency via {st.session_state.pilihan}")
     
-    if submit_fsrp:
-        p_kol = 2 if kolesterol >= 200 else 0
-        skor = sum([usia*2, (tds>=140)*3, smk*3, dm*2, ("PJK" in jantung)*2, ("AF" in jantung)*4, ("LVH (EKG)" in jantung)*5, p_kol])
-        kat = "TINGGI" if skor >= 7 else "RENDAH"
-        
-        st.markdown(f"""
-            <div class="report-frame">
-                <h2 style="text-align: center;">LAPORAN ANALISA PROFIL RISIKO STROKE</h2>
-                <p style="text-align: center; color: #004a99; font-weight: bold;">SINTALA-STROKE by. dr. Faisal Bayu</p>
-                <hr>
-                <p><b>Nama Pasien:</b> {p_nama}</p>
-                <p><b>Dokter Pemeriksa:</b> {st.session_state.nama_dokter}</p>
-                <div style="background: #f8fafc; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0;">
-                    <h3 style="margin: 0;">TOTAL SKOR: {skor}</h3>
-                    <h2 style="margin: 5px; color: {'#dc2626' if kat == 'TINGGI' else '#16a34a'};">RISIKO: {kat}</h2>
-                </div>
-                <p style="text-align: right; margin-top: 40px;">Tanah Laut, {datetime.now().strftime('%d %B %Y')}<br><br><br><b>( {st.session_state.nama_dokter} )</b></p>
-            </div>
-        """, unsafe_allow_html=True)
-
-# --- MODUL NIHSS (11 POIN LENGKAP) ---
-elif st.session_state.pilihan_layanan == "NIHSS":
-    st.header("🚨 Modul NIHSS (Stroke Scale)")
-    with st.form("nihss_form"):
-        p_nama = st.text_input("Nama Pasien", "Pasien Anonim")
-        c1, c2 = st.columns(2)
+    with st.form("soap_form"):
+        st.subheader("Informasi Pasien & SOAP")
+        c1, c2, c3 = st.columns(3)
         with c1:
-            n1a = st.selectbox("1a. Kesadaran (LOC)", ["0: Sadar", "1: Somnolen", "2: Stupor", "3: Koma"])
-            n1b = st.selectbox("1b. LOC Tanya", ["0: Tepat 2", "1: Tepat 1", "2: Salah"])
-            n1c = st.selectbox("1c. LOC Perintah", ["0: Tepat 2", "1: Tepat 1", "2: Salah"])
-            n2 = st.selectbox("2. Gaze (Mata)", ["0: Normal", "1: Paresis", "2: Deviasi"])
-            n3 = st.selectbox("3. Visual", ["0: Normal", "1: Parsial", "2: Komplit", "3: Bilateral"])
-            n4 = st.selectbox("4. Facial Palsy", ["0: Normal", "1: Minor", "2: Parsial", "3: Komplit"])
+            nama_p = st.text_input("Nama Pasien")
+            umur = st.text_input("Umur")
+            rs_tujuan = st.selectbox("RS Tujuan (IGD)", ["RSUD H. Boejasin", "RS Borneo Citra Medika", "RS Ciputra"])
         with c2:
-            n5 = st.selectbox("5. Motor Lengan", ["0: Normal", "1: Drift", "2: Lawan Gravitasi", "3: Flasid"])
-            n6 = st.selectbox("6. Motor Tungkai", ["0: Normal", "1: Drift", "2: Lawan Gravitasi", "3: Flasid"])
-            n7 = st.selectbox("7. Ataksia", ["0: Tak ada", "1: 1 Ekstremitas", "2: 2 Ekstremitas"])
-            n8 = st.selectbox("8. Sensorik", ["0: Normal", "1: Ringan", "2: Berat"])
-            n9 = st.selectbox("9. Bahasa/Afasia", ["0: Normal", "1: Ringan", "2: Berat", "3: Global"])
-            n10 = st.selectbox("10. Disartria", ["0: Normal", "1: Ringan", "2: Berat"])
-            n11 = st.selectbox("11. Neglect", ["0: Normal", "1: Ringan", "2: Berat"])
+            td = st.text_input("TD (mmHg)", "120/80")
+            nadi = st.text_input("Nadi", "88")
+            gcs = st.text_input("GCS", "E4V5M6")
+        with c3:
+            rr = st.text_input("RR", "20")
+            skor_val = st.number_input(f"Skor {st.session_state.pilihan}", 0, 42, 10)
+            lat = st.selectbox("Lateralisasi", ["Kiri", "Kanan", "Tidak Ada"])
+
+        subjek = st.text_area("Subjective (Keluhan Utama & Onset)")
+        plan = st.text_area("Plan (Tindakan yang sudah dilakukan)", "Oksigen 3LPM, IVFD RL 20 tpm, Loading...")
         
-        submit_nihss = st.form_submit_button("HITUNG NIHSS", use_container_width=True)
+        # Database Nomor IGD (Contoh)
+        igd_numbers = {
+            "RSUD H. Boejasin": "08115000000", # Ganti nomor aslinya Dok
+            "RS Borneo Citra Medika": "08115111111",
+            "RS Ciputra": "08115222222"
+        }
 
-    if submit_nihss:
-        total = sum([int(x[0]) for x in [n1a, n1b, n1c, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11]])
-        st.markdown(f'<div class="report-frame"><h2 style="text-align: center;">SKOR NIHSS: {total}</h2><p style="text-align:center;">Pemeriksa: {st.session_state.nama_dokter}</p></div>', unsafe_allow_html=True)
+        if st.form_submit_button("Kirim SOAP ke IGD"):
+            soap_msg = (
+                f"*RUJUKAN EMERGENCY STROKE*\n"
+                f"Kepada: *IGD {rs_tujuan}*\n\n"
+                f"*S (Subjective):*\n- Pasien: {nama_p} ({umur}th)\n- Keluhan: {subjek}\n\n"
+                f"*O (Objective):*\n- TD: {td} | HR: {nadi} | GCS: {gcs} | RR: {rr}\n"
+                f"- Status Neuro: Lateralisasi {lat}\n"
+                f"- Skor {st.session_state.pilihan}: {skor_val}\n\n"
+                f"*A (Assessment):*\n- Suspek Stroke (Rujukan dari Puskesmas)\n\n"
+                f"*P (Plan):*\n- {plan}\n\n"
+                f"Mohon persiapan ruang resusitasi/CT-Scan. Terima kasih."
+            )
+            st.markdown(f'<a href="{send_wa(igd_numbers[rs_tujuan], soap_msg)}" target="_blank"><button style="width:100%; padding:15px; background:#dc2626; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">🚨 KIRIM SOAP KE WA IGD RS</button></a>', unsafe_allow_html=True)
 
-# --- MODUL SIRIRAJ ---
-elif st.session_state.pilihan_layanan == "SIRIRAJ":
-    st.header("🧠 Modul Siriraj Stroke Score")
-    with st.form("sss_form"):
-        p_nama = st.text_input("Nama Pasien", "Pasien Anonim")
-        c1, c2 = st.columns(2)
-        with c1:
-            kes = st.selectbox("Kesadaran", ["0: Sadar", "1: Somnolen", "2: Koma"])
-            mun = st.radio("Muntah Proyektil", [0, 1], format_func=lambda x: "Ya" if x==1 else "Tidak")
-            nye = st.radio("Nyeri Kepala (2 jam)", [0, 1], format_func=lambda x: "Ya" if x==1 else "Tidak")
-        with c2:
-            dia = st.number_input("TD Diastolik", 50, 150, 90)
-            ath = st.checkbox("Atheroma (DM/PJK)")
-        submit_sss = st.form_submit_button("HITUNG SIRIRAJ", use_container_width=True)
-
-    if submit_sss:
-        sss = (2.5 * int(kes[0])) + (2 * mun) + (2 * nye) + (0.1 * dia) - (3 * int(ath)) - 12
-        diag = "STROKE HEMORAGIK" if sss > 1 else "STROKE INFARK" if sss < -1 else "BORDERLINE / PERLU CT-SCAN"
-        st.markdown(f'<div class="report-frame"><h2 style="text-align:center;">SKOR SSS: {sss:.2f}</h2><h3 style="text-align:center;">HASIL: {diag}</h3></div>', unsafe_allow_html=True)
+# --- MENU UTAMA ---
+else:
+    st.title("🩺 SINTALA v3.0")
+    st.write("Selamat Datang, dr. Faisal Bayu. Pilih menu:")
+    if st.button("📊 FSRP (Skrining & Edukasi WA)"): st.session_state.pilihan = "FSRP"; st.rerun()
+    if st.button("🚨 NIHSS / SIRIRAJ (Emergency SOAP WA)"): st.session_state.pilihan = "NIHSS"; st.rerun()
