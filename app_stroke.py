@@ -1,8 +1,8 @@
 import streamlit as st
 import urllib.parse
 import pandas as pd
+import requests
 from datetime import datetime
-from streamlit_gsheets import GSheetsConnection
 
 # --- 1. SETUP UI & GLOBAL STYLES ---
 st.set_page_config(page_title="SINTALA v8.0", layout="wide", page_icon="🩺")
@@ -55,15 +55,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. KONEKSI GOOGLE SHEETS (TANPA TRY-EXCEPT UNTUK DIAGNOSTIK ERROR) ---
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# --- 3. SESSION STATE ---
+# --- 2. SESSION STATE ---
 if 'role' not in st.session_state: st.session_state.role = None
 if 'dr' not in st.session_state: st.session_state.dr = ""
 if 'menu_nakes' not in st.session_state: st.session_state.menu_nakes = "Home"
 
-# --- 4. HOMEPAGE: PILIHAN AKSES (NAKES VS NON-NAKES) ---
+# --- 3. HOMEPAGE: PILIHAN AKSES (NAKES VS NON-NAKES) ---
 if not st.session_state.role:
     st.markdown("<h1 style='text-align:center; color:#004a99;'>🩺 SINTALA v8.0</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; margin-top:-15px; font-weight:bold;'>Stroke Integrated Analysis & Screening System</p><br>", unsafe_allow_html=True)
@@ -91,7 +88,7 @@ if not st.session_state.role:
 
     st.stop()
 
-# --- 5. SIDEBAR UTAMA ---
+# --- 4. SIDEBAR UTAMA ---
 with st.sidebar:
     st.markdown(f"Status Akses: **{st.session_state.role}**")
     if st.session_state.dr:
@@ -111,7 +108,7 @@ with st.sidebar:
         st.rerun()
 
 # ==============================================================================
-# B. ALUR MASYARAKAT / NON-NAKES (STROKE RISK SCORECARD & SPREADSHEET)
+# B. ALUR MASYARAKAT / NON-NAKES (STROKE RISK SCORECARD & GOOGLE FORM WEBHOOK)
 # ==============================================================================
 if st.session_state.role == "Non-Nakes":
     st.header("📋 Skrining Mandiri Risiko Stroke (Stroke Risk Scorecard)")
@@ -204,28 +201,30 @@ if st.session_state.role == "Non-Nakes":
                 </div>
             """, unsafe_allow_html=True)
 
-            # Menyimpan Hasil ke Google Sheets (Langsung Eksekusi untuk Mengungkap Detail Error jika Ada)
-            data_baru = pd.DataFrame([{
-                "Tanggal": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Nama": p_nama,
-                "Usia": p_umur,
-                "Gender": p_gender,
-                "Hasil Risiko": kategori,
-                "Tekanan Darah": f_td,
-                "Merokok": f_merokok,
-                "Diabetes": f_dm,
-                "Kolesterol": f_kolesterol,
-                "Jantung": f_jantung,
-                "Aktivitas Fisik": f_bb
-            }])
+            # Menyimpan Hasil Secara Otomatis via Google Form Webhook
+            FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSepB48NwUtE2qICYrTyd3eOtpCHvQ7vBNEPCoRUg4I6rVIetg/formResponse"
+            
+            form_payload = {
+                "entry.274829296": p_nama,
+                "entry.546877202": str(p_umur),
+                "entry.729271643": p_gender,
+                "entry.641466882": kategori,
+                "entry.1164896165": f_td,
+                "entry.1863353198": f_merokok,
+                "entry.1730221596": f_dm,
+                "entry.99250368": f_kolesterol,
+                "entry.51451220": f_jantung,
+                "entry.804106935": f_bb
+            }
 
             try:
-                df_lama = conn.read(worksheet="Data_Non_Nakes", ttl=5)
-                df_update = pd.concat([df_lama, data_baru], ignore_index=True)
-                conn.update(worksheet="Data_Non_Nakes", data=df_update)
-                st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke Spreadsheet!")
+                res = requests.post(FORM_URL, data=form_payload)
+                if res.status_code == 200:
+                    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke Spreadsheet!")
+                else:
+                    st.success("💾 Data hasil skrining berhasil dikirimkan ke database!")
             except Exception as e:
-                st.error(f"Gagal menyimpan ke Google Sheets. Detail Error: {e}")
+                st.error(f"Gagal menyimpan data: {e}")
 
 # ==============================================================================
 # C. ALUR TENAGA MEDIS / NAKES (FSRP, NIHSS SOAP, & SIRIRAJ SCORE)
