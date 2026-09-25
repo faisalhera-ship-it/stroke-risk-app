@@ -201,7 +201,7 @@ if st.session_state.role == "Non-Nakes":
                 </div>
             """, unsafe_allow_html=True)
 
-            # Menyimpan Hasil Secara Otomatis via Google Form Webhook
+            # Menyimpan Hasil Secara Otomatis via Google Form Webhook (Link & Entry ID Sesuai Permintaan)
             FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSepB48NwUtE2qICYrTyd3eOtpCHvQ7vBNEPCoRUg4I6rVIetg/formResponse"
             
             form_payload = {
@@ -219,8 +219,8 @@ if st.session_state.role == "Non-Nakes":
 
             try:
                 res = requests.post(FORM_URL, data=form_payload)
-                if res.status_code == 200:
-                    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke Spreadsheet!")
+                if res.status_code in [200, 302]:
+                    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke database Google Form/Sheets!")
                 else:
                     st.success("💾 Data hasil skrining berhasil dikirimkan ke database!")
             except Exception as e:
@@ -293,7 +293,7 @@ elif st.session_state.role == "Nakes":
                 n1b = st.selectbox("1b. LOC Tanya", [0,1,2], format_func=lambda x: {0:"0: Benar 2", 1:"1: Benar 1", 2:"2: Salah semua"}[x])
                 n2 = st.selectbox("2. Gaze", [0,1,2], format_func=lambda x: {0:"0: Normal", 1:"1: Paresis Parsial", 2:"2: Deviasi Paksa"}[x])
                 n3 = st.selectbox("3. Visual", [0,1,2,3], format_func=lambda x: {0:"0: No Loss", 1:"1: Kuadranopsia", 2:"2: Hemianopsia", 3:"3: Blind"}[x])
-                n4 = st.selectbox("4. Facial Palsy", [0,1,2,3], format_func=lambda x: {0:"0: Normal", 1:"1: Minor", 2:"2: Parsial", 3:"3: Komplit"}[x])
+                n4 = st.selectbox("4. Facial Palsy", [0,1,2,3], format_func=lambda x: {0:"0: Minor", 1:"1: Minor", 2:"2: Parsial", 3:"3: Komplit"}[x])
                 n5 = st.selectbox("5. Motor Lengan", [0,1,2,3,4], format_func=lambda x: {0:"0: No Drift", 1:"1: Drift", 2:"2: Lawan Gravitasi", 3:"3: Jatuh", 4:"4: Lumpuh"}[x])
             with c2:
                 n6 = st.selectbox("6. Motor Tungkai", [0,1,2,3,4], format_func=lambda x: {0:"0: No Drift", 1:"1: Drift", 2:"2: Lawan Gravitasi", 3:"3: Jatuh", 4:"4: Lumpuh"}[x])
