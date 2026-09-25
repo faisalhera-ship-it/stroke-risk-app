@@ -56,10 +56,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 2. KONEKSI GOOGLE SHEETS ---
-try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-except Exception:
-    conn = None
+# --- 2. KONEKSI GOOGLE SHEETS ---
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- 3. SESSION STATE ---
 if 'role' not in st.session_state: st.session_state.role = None
