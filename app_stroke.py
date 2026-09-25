@@ -220,16 +220,14 @@ if st.session_state.role == "Non-Nakes":
                 "Aktivitas Fisik": f_bb
             }])
 
-            if conn:
-                try:
-                    df_lama = conn.read(worksheet="Data_Non_Nakes", ttl=5)
-                    df_update = pd.concat([df_lama, data_baru], ignore_index=True)
-                    conn.update(worksheet="Data_Non_Nakes", data=df_update)
-                    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke Spreadsheet!")
-                except Exception as e:
-                    st.info("Hasil analisis selesai. (Catatan: Hubungkan koneksi Google Sheets untuk mengaktifkan penyimpanan otomatis database).")
-            else:
-                st.info("💡 Hasil analisis berhasil ditampilkan.")
+           # KODE BARU (LANGSUNG EKSEKUSI & TAMPILKAN ERROR):
+try:
+    df_lama = conn.read(worksheet="Data_Non_Nakes", ttl=5)
+    df_update = pd.concat([df_lama, data_baru], ignore_index=True)
+    conn.update(worksheet="Data_Non_Nakes", data=df_update)
+    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke Spreadsheet!")
+except Exception as e:
+    st.error(f"Gagal menyimpan ke Google Sheets. Detail Error: {e}")
 
 # ==============================================================================
 # C. ALUR TENAGA MEDIS / NAKES (FSRP, NIHSS SOAP, & SIRIRAJ SCORE)
