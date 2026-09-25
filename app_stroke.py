@@ -55,8 +55,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. KONEKSI GOOGLE SHEETS ---
-# --- 2. KONEKSI GOOGLE SHEETS ---
+# --- 2. KONEKSI GOOGLE SHEETS (TANPA TRY-EXCEPT UNTUK DIAGNOSTIK ERROR) ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- 3. SESSION STATE ---
@@ -205,7 +204,7 @@ if st.session_state.role == "Non-Nakes":
                 </div>
             """, unsafe_allow_html=True)
 
-            # Menyimpan Hasil ke Google Sheets
+            # Menyimpan Hasil ke Google Sheets (Langsung Eksekusi untuk Mengungkap Detail Error jika Ada)
             data_baru = pd.DataFrame([{
                 "Tanggal": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "Nama": p_nama,
@@ -220,14 +219,13 @@ if st.session_state.role == "Non-Nakes":
                 "Aktivitas Fisik": f_bb
             }])
 
-           # KODE BARU (LANGSUNG EKSEKUSI & TAMPILKAN ERROR):
-try:
-    df_lama = conn.read(worksheet="Data_Non_Nakes", ttl=5)
-    df_update = pd.concat([df_lama, data_baru], ignore_index=True)
-    conn.update(worksheet="Data_Non_Nakes", data=df_update)
-    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke Spreadsheet!")
-except Exception as e:
-    st.error(f"Gagal menyimpan ke Google Sheets. Detail Error: {e}")
+            try:
+                df_lama = conn.read(worksheet="Data_Non_Nakes", ttl=5)
+                df_update = pd.concat([df_lama, data_baru], ignore_index=True)
+                conn.update(worksheet="Data_Non_Nakes", data=df_update)
+                st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke Spreadsheet!")
+            except Exception as e:
+                st.error(f"Gagal menyimpan ke Google Sheets. Detail Error: {e}")
 
 # ==============================================================================
 # C. ALUR TENAGA MEDIS / NAKES (FSRP, NIHSS SOAP, & SIRIRAJ SCORE)
