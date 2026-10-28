@@ -88,9 +88,30 @@ if not st.session_state.role:
 
 # --- 4. SIDEBAR UTAMA ---
 with st.sidebar:
-    st.markdown("<div style='padding:8px 0 18px;'><div style='font-size:.72rem;letter-spacing:.15em;color:#f2d28b;font-weight:800;'>SINTALA v8.0</div><div style='font-size:1.25rem;font-weight:800;color:#ffffff;'>Clinical Workspace</div></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='padding:8px 0 18px;'>"
+        "<div style='font-size:.72rem;letter-spacing:.15em;"
+        "color:#f2d28b;font-weight:800;'>SINTALA v8.0</div>"
+        "<div style='font-size:1.25rem;font-weight:800;"
+        "color:#ffffff;'>Clinical Workspace</div></div>",
+        unsafe_allow_html=True
+    )
+
     st.markdown(f"**Status Akses**  \n{st.session_state.role}")
+
     if st.session_state.dr:
         st.markdown(f"DPJP/Petugas: **{st.session_state.dr}**")
-    
+
     if st.session_state.role == "Nakes":
+        if st.button("🏠 Menu Utama Nakes", use_container_width=True):
+            st.session_state.menu_nakes = "Home"
+            st.rerun()
+
+        st.divider()
+        st.info("💡 Tekan **Ctrl + P** untuk mencetak laporan.")
+
+    if st.button("🔄 Ganti Peran / Keluar", use_container_width=True):
+        st.session_state.role = None
+        st.session_state.dr = ""
+        st.session_state.menu_nakes = "Home"
+        st.rerun()
