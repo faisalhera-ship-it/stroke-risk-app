@@ -191,14 +191,13 @@ if st.session_state.role == "Non-Nakes":
                 css_card = "scorecard-low"
                 edukasi = "Tingkat risiko Anda saat ini tergolong rendah. Pertahankan pola hidup sehat, makan bergizi, dan tetap berolahraga secara teratur."
 
-            st.markdown(
-                f"<div class='{css_card}'>"
-                f"<h2>Kategori Skrining: {kategori}</h2>"
-                f"<p><b>Nama:</b> {p_nama} ({p_umur} Thn) | <b>Jenis Kelamin:</b> {p_gender}</p>"
-                f"<p><b>Saran & Edukasi:</b> {edukasi}</p>"
-                f"</div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"""
+                <div class='{css_card}'>
+                    <h2>Kategori Skrining: {kategori}</h2>
+                    <p><b>Nama:</b> {p_nama} ({p_umur} Thn) | <b>Jenis Kelamin:</b> {p_gender}</p>
+                    <p><b>Saran & Edukasi:</b> {edukasi}</p>
+                </div>
+            """, unsafe_allow_html=True)
 
             FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSepB48NwUtE2qICYrTyd3eOtpCHvQ7vBNEPCoRUg4I6rVIetg/formResponse"
             
@@ -300,16 +299,15 @@ elif st.session_state.role == "Nakes":
                 pesan_fsrp = f"Halo Bapak/Ibu {p_nama}, hasil pemeriksaan risiko stroke Anda: TD {tds}, Kolesterol {chol}. Tingkat risiko: {risiko}. Mohon jaga pola makan dan kontrol rutin. - dr. {st.session_state.dr}"
                 st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(pesan_fsrp)}" target="_blank" class="wa-btn">📲 KIRIM EDUKASI KE PASIEN VIA WA</a>', unsafe_allow_html=True)
                 
-                st.markdown(
-                    "<div class='print-report'>"
-                    "<div class='kop-surat'><h2>LAPORAN ANALISIS RISIKO STROKE (FSRP)</h2></div>"
-                    f"<p><b>Pasien:</b> {p_nama} ({p_umur} th) | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>"
-                    "<hr>"
-                    f"<p><b>TD Sistolik:</b> {tds} mmHg | <b>Total Kolesterol:</b> {chol} mg/dL | <b>Penyakit Jantung:</b> {'Ada' if cvd else 'Tidak'}</p>"
-                    f"<h3 style='color:red;'>INTERPRETASI: RISIKO {risiko}</h3>"
-                    "</div>",
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"""
+                    <div class="print-report">
+                        <div class="kop-surat"><h2>LAPORAN ANALISIS RISIKO STROKE (FSRP)</h2></div>
+                        <p><b>Pasien:</b> {p_nama} ({p_umur} th) | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>
+                        <hr>
+                        <p><b>TD Sistolik:</b> {tds} mmHg | <b>Total Kolesterol:</b> {chol} mg/dL | <b>Penyakit Jantung:</b> {"Ada" if cvd else "Tidak"}</p>
+                        <h3 style="color:red;">INTERPRETASI: RISIKO {risiko}</h3>
+                    </div>
+                """, unsafe_allow_html=True)
 
     elif st.session_state.menu_nakes == "NIHSS":
         st.header("🚨 NIHSS 11 Parameter (SOAP Edition)")
@@ -343,6 +341,47 @@ elif st.session_state.role == "Nakes":
                 msg_nihss = f"*LAPORAN RUJUKAN NIHSS*\nPasien: {p_nama}\nS: {s_subj}\nO: {o_vital}, NIHSS {skor}\nA: Suspek Stroke ({kat})\nP: {p_plan}\nDPJP: dr. {st.session_state.dr}"
                 st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg_nihss)}" target="_blank" class="wa-btn">📲 KIRIM FORMAT SOAP KE IGD RS VIA WA</a>', unsafe_allow_html=True)
                 
-                st.markdown(
-                    "<div class='print-report'>"
-                    "<div class
+                st.markdown(f"""
+                    <div class="print-report">
+                        <div class="kop-surat"><h2>RESUME MEDIS NIHSS (SOAP)</h2></div>
+                        <p><b>Pasien:</b> {p_nama} | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>
+                        <p><b>Skor NIHSS: {skor} (Stroke {kat})</b></p>
+                        <hr>
+                        <p><b>[S] Subjective:</b> {s_subj}</p>
+                        <p><b>[O] Objective:</b> {o_vital}</p>
+                        <p><b>[P] Plan:</b> {p_plan}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+
+    elif st.session_state.menu_nakes == "SIRIRAJ":
+        st.header("🧠 Siriraj Stroke Score (Diagnostik)")
+        with st.form("siriraj_form"):
+            p_nama = st.text_input("Nama Pasien")
+            c1, c2 = st.columns(2)
+            with c1:
+                sadar = st.selectbox("Kesadaran", [0,1,2], format_func=lambda x: {0:"0: Sadar", 1:"1: Stupor", 2:"2: Koma"}[x])
+                muntah = st.selectbox("Muntah (2 jam terakhir)", [0,1], format_func=lambda x: "0: Tidak" if x==0 else "1: Ya")
+                nyeri = st.selectbox("Nyeri Kepala (2 jam terakhir)", [0,1], format_func=lambda x: "0: Tidak" if x==0 else "1: Ya")
+            with c2:
+                dbp = st.number_input("TD Diastolik (mmHg)", 60, 160, 90)
+                athero = st.selectbox("Marker Atheroma (DM/PJK)", [0,1], format_func=lambda x: "0: Tidak" if x==0 else "1: Ada")
+                p_plan_s = st.text_input("Plan", "Observasi, Stabilisasi & CT-Scan")
+
+            if st.form_submit_button("Hitung Siriraj & Kirim WA", use_container_width=True):
+                sss_val = (2.5 * sadar) + (2 * muntah) + (2 * nyeri) + (0.1 * dbp) - (3 * athero) - 12
+                sss_str = f"{sss_val:.2f}"
+                diag = "Hemoragik" if sss_val > 1 else "Iskemik" if sss_val < -1 else "Perlu CT-Scan (Equivocal)"
+                
+                msg_sss = f"*HASIL SIRIRAJ STROKE SCORE*\nPasien: {p_nama}\nSkor SSS: {sss_str}\nPrediksi: Stroke {diag}\nPlan: {p_plan_s}\nDPJP: dr. {st.session_state.dr}"
+                st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg_sss)}" target="_blank" class="wa-btn">📲 KIRIM HASIL KE IGD VIA WA</a>', unsafe_allow_html=True)
+
+                st.markdown(f"""
+                    <div class="print-report">
+                        <div class="kop-surat"><h2>LAPORAN SIRIRAJ STROKE SCORE</h2></div>
+                        <p><b>Pasien:</b> {p_nama} | <b>Diastolik:</b> {dbp} mmHg | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>
+                        <p><b>Skor SSS: {sss_str}</b></p>
+                        <hr>
+                        <h3 style="color:#004a99;">PREDIKSI KLINIS: STROKE {diag.upper()}</h3>
+                        <p><b>Rencana Lanjutan:</b> {p_plan_s}</p>
+                    </div>
+                """, unsafe_allow_html=True)
