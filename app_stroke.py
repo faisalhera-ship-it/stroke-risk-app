@@ -5,7 +5,7 @@ import requests
 from datetime import datetime
 
 # --- 1. SETUP UI & GLOBAL STYLES ---
-st.set_page_config(page_title="SINTALA v8.0", layout="wide", page_icon="🩺")
+st.set_page_config(page_title="SINTALA", layout="wide", page_icon="🩺")
 
 st.markdown("""
     <style>
