@@ -220,11 +220,46 @@ if st.session_state.role == "Non-Nakes":
             try:
                 res = requests.post(FORM_URL, data=form_payload)
                 if res.status_code in [200, 302]:
-                    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke database Google Form/Sheets!")
+                    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke database Puskesmas!")
                 else:
                     st.success("💾 Data hasil skrining berhasil dikirimkan ke database!")
             except Exception as e:
                 st.error(f"Gagal menyimpan data: {e}")
+
+            # --- FITUR TOMBOL UNDUH BUKTI HASIL SKRINING ---
+            st.write("")
+            report_content = f"""========================================
+BUKTI SKRINING MANDIRI RISIKO STROKE
+SINTALA v8.0 - UPTD PUSKESMAS TIRTA JAYA
+========================================
+Tanggal Pemeriksaan : {datetime.now().strftime('%d-%m-%Y %H:%M')}
+Nama Lengkap        : {p_nama}
+Usia / Jenis Kelamin: {p_umur} Tahun / {p_gender}
+----------------------------------------
+HASIL EVALUASI KESEHATAN: {kategori}
+----------------------------------------
+SARAN & EDUKASI KLINIS:
+{edukasi}
+
+DETAIL PARAMETER RISIKO:
+- Tekanan Darah    : {f_td}
+- Kebiasaan Merokok: {f_merokok}
+- Gula Darah (DM)  : {f_dm}
+- Kadar Kolesterol : {f_kolesterol}
+- Riwayat Jantung  : {f_jantung}
+- Aktivitas Fisik  : {f_bb}
+========================================
+Catatan: Harap bawa hasil skrining digital ini 
+saat berkonsultasi ke Puskesmas Tirta Jaya.
+"""
+
+            st.download_button(
+                label="📥 Unduh Bukti Hasil Skrining (.TXT)",
+                data=report_content,
+                file_name=f"Hasil_Skrining_Stroke_{p_nama.replace(' ', '_')}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
 
 # ==============================================================================
 # C. ALUR TENAGA MEDIS / NAKES (FSRP, NIHSS SOAP, & SIRIRAJ SCORE)
@@ -356,11 +391,4 @@ elif st.session_state.role == "Nakes":
                 # Tampilan Resume Cetak
                 st.markdown(f"""
                     <div class="print-report">
-                        <div class="kop-surat"><h2>LAPORAN SIRIRAJ STROKE SCORE</h2></div>
-                        <p><b>Pasien:</b> {p_nama} | <b>Diastolik:</b> {dbp} mmHg | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>
-                        <p><b>Skor SSS: {sss:.2f}</b></p>
-                        <hr>
-                        <h3 style="color:#004a99;">PREDIKSI KLINIS: STROKE {diag.upper()}</h3>
-                        <p><b>Rencana Lanjutan:</b> {p_plan_s}</p>
-                    </div>
-                """, unsafe_allow_html=True)
+                        <div class="kop-surat"><h2>LAPOR
