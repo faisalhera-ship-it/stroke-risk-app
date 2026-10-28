@@ -1,3 +1,9 @@
+                st.session_state.menu_nakes = "FSRP"
+                st.rerun()
+        with c2:
+            if st.button("🚨 NIHSS\n(SOAP & IGD)", use_container_width=True):
+                st.session_state.menu_nakes = "NIHSS"
+                st.rerun()
         with c3:
             if st.button("🧠 SIRIRAJ\n(Diagnostik)", use_container_width=True):
                 st.session_state.menu_nakes = "SIRIRAJ"
