@@ -345,40 +345,4 @@ elif st.session_state.role == "Nakes":
                 
                 st.markdown(
                     "<div class='print-report'>"
-                    "<div class='kop-surat'><h2>RESUME MEDIS NIHSS (SOAP)</h2></div>"
-                    f"<p><b>Pasien:</b> {p_nama} | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>"
-                    f"<p><b>Skor NIHSS: {skor} (Stroke {kat})</b></p>"
-                    "<hr>"
-                    f"<p><b>[S] Subjective:</b> {s_subj}</p>"
-                    f"<p><b>[O] Objective:</b> {o_vital}</p>"
-                    f"<p><b>[P] Plan:</b> {p_plan}</p>"
-                    "</div>",
-                    unsafe_allow_html=True
-                )
-
-    elif st.session_state.menu_nakes == "SIRIRAJ":
-        st.header("🧠 Siriraj Stroke Score (Diagnostik)")
-        with st.form("siriraj_form"):
-            p_nama = st.text_input("Nama Pasien")
-            c1, c2 = st.columns(2)
-            with c1:
-                sadar = st.selectbox("Kesadaran", [0,1,2], format_func=lambda x: {0:"0: Sadar", 1:"1: Stupor", 2:"2: Koma"}[x])
-                muntah = st.selectbox("Muntah (2 jam terakhir)", [0,1], format_func=lambda x: "0: Tidak" if x==0 else "1: Ya")
-                nyeri = st.selectbox("Nyeri Kepala (2 jam terakhir)", [0,1], format_func=lambda x: "0: Tidak" if x==0 else "1: Ya")
-            with c2:
-                dbp = st.number_input("TD Diastolik (mmHg)", 60, 160, 90)
-                athero = st.selectbox("Marker Atheroma (DM/PJK)", [0,1], format_func=lambda x: "0: Tidak" if x==0 else "1: Ada")
-                p_plan_s = st.text_input("Plan", "Observasi, Stabilisasi & CT-Scan")
-
-            if st.form_submit_button("Hitung Siriraj & Kirim WA", use_container_width=True):
-                sss = (2.5 * sadar) + (2 * muntah) + (2 * nyeri) + (0.1 * dbp) - (3 * athero) - 12
-                diag = "Hemoragik" if sss > 1 else "Iskemik" if sss < -1 else "Perlu CT-Scan (Equivocal)"
-                
-                msg_sss = f"*HASIL SIRIRAJ STROKE SCORE*\nPasien: {p_nama}\nSkor SSS: {sss:.2f}\nPrediksi: Stroke {diag}\nPlan: {p_plan_s}\nDPJP: dr. {st.session_state.dr}"
-                st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg_sss)}" target="_blank" class="wa-btn">📲 KIRIM HASIL KE IGD VIA WA</a>', unsafe_allow_html=True)
-
-                st.markdown(
-                    "<div class='print-report'>"
-                    "<div class='kop-surat'><h2>LAPORAN SIRIRAJ STROKE SCORE</h2></div>"
-                    f"<p><b>Pasien:</b> {p_nama} | <b>Diastolik:</b> {dbp} mmHg | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>"
-                    f"<p><b>Skor SSS: {sss:.
+                    "<div class
