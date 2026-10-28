@@ -1,192 +1,96 @@
-        if st.button("🏠 Menu Utama Nakes", use_container_width=True):
-            st.session_state.menu_nakes = "Home"
-            st.rerun()
-        st.divider()
-        st.info("💡 Tekan **Ctrl + P** untuk mencetak laporan.")
+import streamlit as st
+import urllib.parse
+import pandas as pd
+import requests
+from datetime import datetime
 
-    if st.button("🔄 Ganti Peran / Keluar", use_container_width=True):
-        st.session_state.role = None
-        st.session_state.dr = ""
-        st.session_state.menu_nakes = "Home"
-        st.rerun()
+# --- 1. SETUP UI & GLOBAL STYLES ---
+st.set_page_config(page_title="SINTALA v8.0", layout="wide", page_icon="🩺")
 
-# ==============================================================================
-# B. ALUR MASYARAKAT / NON-NAKES (STROKE RISK SCORECARD & GOOGLE FORM WEBHOOK)
-# ==============================================================================
-if st.session_state.role == "Non-Nakes":
-    st.header("📋 Skrining Mandiri Risiko Stroke (Stroke Risk Scorecard)")
-    st.caption("Isi form di bawah ini untuk mengukur tingkat risiko stroke Anda secara mandiri.")
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root{--navy:#102544;--blue:#1769aa;--gold:#d9ad54;--ink:#18283f;--muted:#64748b;--line:#e4ebf3}
+html,body,[class*="css"]{font-family:'Plus Jakarta Sans',sans-serif}
+.stApp{background:radial-gradient(circle at 8% 0%,rgba(36,112,184,.08),transparent 27rem),linear-gradient(180deg,#f5f8fc 0%,#f8fafc 55%,#eef4fa 100%);color:var(--ink)}
+.block-container{max-width:1440px;padding-top:2rem;padding-bottom:3rem}
+h1,h2,h3{color:var(--navy);letter-spacing:-.035em;font-weight:800!important}
+[data-testid="stSidebar"]{background:linear-gradient(180deg,#102544 0%,#173b64 100%);border-right:1px solid rgba(255,255,255,.1)}
+[data-testid="stSidebar"] *{color:#f7faff}
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p{color:#e3edf8}
+[data-testid="stSidebar"] .stButton>button{background:rgba(255,255,255,.10)!important;color:white!important;border:1px solid rgba(255,255,255,.18)!important}
+.stButton>button,.stFormSubmitButton>button{min-height:3rem;border-radius:13px!important;border:1px solid #d6e2ef!important;background:#fff!important;color:var(--navy)!important;font-weight:700!important;box-shadow:0 5px 16px rgba(16,37,68,.06);transition:transform .15s ease,box-shadow .15s ease}
+.stButton>button:hover,.stFormSubmitButton>button:hover{transform:translateY(-1px);border-color:#7fa9d5!important;box-shadow:0 9px 22px rgba(16,37,68,.12)}
+.stFormSubmitButton>button{background:linear-gradient(135deg,#1769aa,#102f56)!important;color:#fff!important;border:none!important}
+.stTextInput input,.stNumberInput input,.stSelectbox [data-baseweb="select"],.stTextArea textarea{border-radius:11px!important;border-color:#d8e3ef!important;background:#fff!important}
+div[data-testid="stForm"]{background:rgba(255,255,255,.9);padding:clamp(1rem,2vw,1.7rem);border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 32px rgba(16,37,68,.045)}
+div[data-testid="stMetric"]{background:#fff;border:1px solid var(--line);padding:1rem;border-radius:16px;box-shadow:0 5px 18px rgba(16,37,68,.04)}
+div[data-testid="stAlert"]{border-radius:13px}hr{border-color:var(--line)!important}
+.role-card{min-height:205px;background:linear-gradient(145deg,#fff,#f4f8fd);padding:28px 24px;border-radius:22px;text-align:left;border:1px solid #dce7f2;border-top:5px solid #1769aa;box-shadow:0 14px 34px rgba(16,37,68,.07)}
+.role-card h3{margin-top:0;font-size:1.35rem}.role-card p{color:#53657b;line-height:1.65}
+.hero-panel{background:linear-gradient(120deg,#102544 0%,#174c7d 68%,#1b6c9e 100%);color:white;padding:clamp(1.5rem,4vw,3rem);border-radius:28px;margin-bottom:1.5rem;box-shadow:0 20px 45px rgba(16,37,68,.18);position:relative;overflow:hidden}
+.hero-panel h1,.hero-panel h2,.hero-panel p{color:white!important}
+.hero-kicker{color:#f2d28b;text-transform:uppercase;letter-spacing:.16em;font-size:.78rem;font-weight:800;margin-bottom:.5rem}
+.hero-sub{color:#dce9f7!important;font-size:1.02rem;line-height:1.7}
+.section-eyebrow{text-transform:uppercase;letter-spacing:.12em;color:#647f9d;font-size:.75rem;font-weight:800;margin-bottom:.25rem}
+.wa-btn{background:#168c57;color:white!important;padding:14px 18px;border-radius:12px;text-align:center;font-weight:700;text-decoration:none;display:block;margin:12px 0 18px;box-shadow:0 8px 18px rgba(22,140,87,.18)}
+.print-report{background:#fff;padding:35px;border:1px solid #cbd5e1;border-radius:12px;color:#111827;line-height:1.6;margin-top:20px;box-shadow:0 10px 28px rgba(16,37,68,.06)}
+.kop-surat{text-align:center;border-bottom:4px double #333;margin-bottom:15px}
+.scorecard-high,.scorecard-med,.scorecard-low{padding:25px;border-radius:18px;color:#172033;margin-top:1rem;box-shadow:0 10px 26px rgba(16,37,68,.06)}
+.scorecard-high{background:#fff1f1;border:1px solid #ffcaca;border-left:7px solid #d93d4b}
+.scorecard-med{background:#fff7e8;border:1px solid #ffe0a8;border-left:7px solid #e59a23}
+.scorecard-low{background:#ecfbf2;border:1px solid #bce9cc;border-left:7px solid #21945a}
+@media(max-width:768px){.block-container{padding-top:1rem}.role-card{min-height:auto;padding:20px}div[data-testid="stForm"]{padding:1rem}}
+@media print{.no-print,header,footer,[data-testid="stHeader"],[data-testid="stSidebar"],.stButton,.wa-btn{display:none!important}.print-report{border:none!important;box-shadow:none!important;padding:0!important;width:100%!important}.stApp{background:white!important}}
+</style>
+""", unsafe_allow_html=True)
 
-    with st.form("form_scorecard"):
-        st.subheader("1. Data Diri")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            p_nama = st.text_input("Nama Lengkap")
-        with c2:
-            p_umur = st.number_input("Usia (Tahun)", min_value=1, max_value=120, value=40)
-        with c3:
-            p_gender = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
+# --- 2. SESSION STATE ---
+if 'role' not in st.session_state: st.session_state.role = None
+if 'dr' not in st.session_state: st.session_state.dr = ""
+if 'menu_nakes' not in st.session_state: st.session_state.menu_nakes = "Home"
 
-        st.divider()
-        st.subheader("2. Kartu Skor Parameter Risiko")
+# --- 3. HOMEPAGE: PILIHAN AKSES (NAKES VS NON-NAKES) ---
+if not st.session_state.role:
+    st.markdown("""
+    <div class="hero-panel">
+      <div class="hero-kicker">System Integration Neurology Tanah Laut</div>
+      <h1 style="font-size:clamp(2.1rem,5vw,3.5rem);margin:0;">SINTALA <span style="color:#f2d28b;">v8.0</span></h1>
+      <p class="hero-sub" style="max-width:760px;margin-top:.7rem;">Stroke Integrated Analysis & Screening System</p>
+      <p style="max-width:760px;margin-bottom:0;">Platform pendukung penilaian klinis, skrining risiko stroke, dan dokumentasi untuk membantu alur kerja layanan kesehatan.</p>
+    </div>
+    <div class="section-eyebrow">Pilih ruang akses</div>
+    <h2 style="margin-top:0;">Mulai dari kebutuhan Anda</h2>
+    """, unsafe_allow_html=True)
 
-        f_td = st.radio("Tekanan Darah", [
-            "Sistolik >140 / Diastolik >90 ATAU minum obat darah tinggi (Risiko Tinggi)",
-            "Sistolik 120-139 / Diastolik 80-89 (Risiko Sedang)",
-            "Sistolik <120 / Diastolik <80 (Risiko Rendah)"
-        ])
-        
-        f_merokok = st.radio("Kebiasaan Merokok", [
-            "Perokok aktif / Sering terpapar asap rokok (Risiko Tinggi)",
-            "Sedang mencoba berhenti merokok (Risiko Sedang)",
-            "Bukan perokok / Tidak pernah merokok (Risiko Rendah)"
-        ])
-        
-        f_dm = st.radio("Diabetes (Gula Darah)", [
-            "Di Diagnosis Diabetes / Gula Darah Tinggi (Risiko Tinggi)",
-            "Batas Normal Tinggi / Pre-Diabetes (Risiko Sedang)",
-            "Gula Darah Normal (Risiko Rendah)"
-        ])
-        
-        f_kolesterol = st.radio("Kadar Kolesterol", [
-            "Total Kolesterol >240 mg/dL (Risiko Tinggi)",
-            "Total Kolesterol 200-239 mg/dL (Risiko Sedang)",
-            "Total Kolesterol <200 mg/dL (Risiko Rendah)"
-        ])
-        
-        f_jantung = st.radio("Riwayat Jantung / Keluarga", [
-            "Ada penyakit jantung / Riwayat keluarga terkena stroke (Risiko Tinggi)",
-            "Tidak yakin / Ragu-ragu (Risiko Sedang)",
-            "Tidak ada riwayat penyakit jantung/keluarga (Risiko Rendah)"
-        ])
-        
-        f_bb = st.radio("Aktivitas Fisik & Berat Badan", [
-            "Jarang olahraga & Berat badan berlebih/obesitas (Risiko Tinggi)",
-            "Sedikit kurang bergerak (Risiko Sedang)",
-            "Rajin olahraga & Berat badan ideal (Risiko Rendah)"
-        ])
-
-        btn_analisis = st.form_submit_button("Analisis Risiko Saya & Simpan", use_container_width=True)
-
-    if btn_analisis:
-        if not p_nama:
-            st.error("Mohon masukkan Nama Lengkap Anda terlebih dahulu.")
-        else:
-            # Hitung Jumlah Poin Risiko Tinggi
-            tinggi_count = sum([
-                1 if "Risiko Tinggi" in f_td else 0,
-                1 if "Risiko Tinggi" in f_merokok else 0,
-                1 if "Risiko Tinggi" in f_dm else 0,
-                1 if "Risiko Tinggi" in f_kolesterol else 0,
-                1 if "Risiko Tinggi" in f_jantung else 0,
-                1 if "Risiko Tinggi" in f_bb else 0
-            ])
-
-            if tinggi_count >= 3:
-                kategori = "RISIKO TINGGI"
-                css_card = "scorecard-high"
-                edukasi = "Anda memiliki beberapa faktor risiko utama stroke. Sangat disarankan untuk segera berkonsultasi ke fasilitas kesehatan terdekat untuk kontrol dan pemeriksaan rutin."
-            elif tinggi_count >= 1:
-                kategori = "RISIKO SEDANG"
-                css_card = "scorecard-med"
-                edukasi = "Anda memiliki beberapa faktor risiko yang perlu diwaspadai. Mulailah memperbaiki pola hidup sehat dan lakukan pemeriksaan kesehatan berkala."
-            else:
-                kategori = "RISIKO RENDAH"
-                css_card = "scorecard-low"
-                edukasi = "Tingkat risiko Anda saat ini tergolong rendah. Pertahankan pola hidup sehat, makan bergizi, dan tetap berolahraga secara teratur."
-
-            # Tampilan Hasil Evaluasi
-            st.markdown(f"""
-                <div class='{css_card}'>
-                    <h2>Kategori Skrining: {kategori}</h2>
-                    <p><b>Nama:</b> {p_nama} ({p_umur} Thn) | <b>Jenis Kelamin:</b> {p_gender}</p>
-                    <p><b>Saran & Edukasi:</b> {edukasi}</p>
-                </div>
-            """, unsafe_allow_html=True)
-
-            # Webhook URL dan Payload 10 Parameter Lengkap
-            FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSepB48NwUtE2qICYrTyd3eOtpCHvQ7vBNEPCoRUg4I6rVIetg/formResponse"
-            
-            form_payload = {
-                "entry.274829296": p_nama,
-                "entry.546877202": str(p_umur),
-                "entry.729271643": p_gender,
-                "entry.641466882": kategori,
-                "entry.1164896165": f_td,
-                "entry.1863353198": f_merokok,
-                "entry.1730221596": f_dm,
-                "entry.99250368": f_kolesterol,
-                "entry.51451220": f_jantung,
-                "entry.804106935": f_bb
-            }
-
-            try:
-                res = requests.post(FORM_URL, data=form_payload)
-                if res.status_code in [200, 302]:
-                    st.success("💾 Data hasil skrining Anda berhasil tersimpan otomatis ke database Google Form/Sheets!")
-                else:
-                    st.success("💾 Data hasil skrining berhasil dikirimkan ke database!")
-            except Exception as e:
-                st.error(f"Gagal menyimpan data: {e}")
-
-# ==============================================================================
-# C. ALUR TENAGA MEDIS / NAKES (FSRP, NIHSS SOAP, & SIRIRAJ SCORE)
-# ==============================================================================
-elif st.session_state.role == "Nakes":
+    col1, col2 = st.columns(2)
     
-    # 1. MENU UTAMA NAKES
-    if st.session_state.menu_nakes == "Home":
-        st.markdown("""
-        <div class="hero-panel" style="padding:1.7rem 2rem;">
-          <div class="hero-kicker">Clinical workspace</div>
-          <h2 style="margin:0;">Instrumen Klinis Terintegrasi</h2>
-          <p class="hero-sub" style="margin:.55rem 0 0;">Pilih modul untuk memulai penilaian, menyusun dokumentasi, atau membantu komunikasi klinis.</p>
-        </div>
-        <div class="section-eyebrow">Modul tersedia</div>
-        """, unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3, gap="large")
-        with c1:
-            if st.button("📊 FSRP\n(Skrining & Edukasi)", use_container_width=True):
-                st.session_state.menu_nakes = "FSRP"
+    with col1:
+        st.markdown("<div class='role-card'><h3>👨‍⚕️ Tenaga Medis (Nakes)</h3><p>Akses klinis: FSRP, NIHSS (SOAP), & Siriraj Score</p></div>", unsafe_allow_html=True)
+        st.write("")
+        dr_input = st.text_input("Nama Dokter / Petugas Medis:")
+        if st.button("Masuk Layanan Nakes", use_container_width=True):
+            if dr_input:
+                st.session_state.role = "Nakes"
+                st.session_state.dr = dr_input
                 st.rerun()
-        with c2:
-            if st.button("🚨 NIHSS\n(SOAP & IGD)", use_container_width=True):
-                st.session_state.menu_nakes = "NIHSS"
-                st.rerun()
-        with c3:
-            if st.button("🧠 SIRIRAJ\n(Diagnostik)", use_container_width=True):
-                st.session_state.menu_nakes = "SIRIRAJ"
-                st.rerun()
+            else:
+                st.warning("Mohon masukkan nama Dokter/Petugas Medis terlebih dahulu.")
 
-    # 2. MODUL FSRP (FRAMINGHAM STROKE RISK PROFILE)
-    elif st.session_state.menu_nakes == "FSRP":
-        st.header("📊 Framingham Stroke Risk Profile")
-        with st.form("fsrp_form"):
-            p_nama = st.text_input("Nama Pasien")
-            p_umur = st.number_input("Umur", 30, 90, 50)
-            c1, c2 = st.columns(2)
-            with c1:
-                tds = st.number_input("TD Sistolik (mmHg)", 90, 220, 120)
-                chol = st.number_input("Total Kolesterol (mg/dL)", 100, 500, 200)
-                dm = st.selectbox("Diabetes", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
-            with c2:
-                smoke = st.selectbox("Merokok", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
-                cvd = st.selectbox("Penyakit Jantung", [0, 1], format_func=lambda x: "Tidak Ada" if x==0 else "Ada (PJK/AF/CHF)")
-                lvh = st.selectbox("LVH (EKG)", [0, 1], format_func=lambda x: "Tidak" if x==0 else "Ya")
-            
-            if st.form_submit_button("Generate Laporan & Edukasi WA", use_container_width=True):
-                risiko = "TINGGI" if (tds > 160 or cvd == 1) else "SEDANG" if tds > 140 else "RENDAH"
-                
-                # Format Pesan WhatsApp Edukasi
-                pesan_fsrp = f"Halo Bapak/Ibu {p_nama}, hasil pemeriksaan risiko stroke Anda: TD {tds}, Kolesterol {chol}. Tingkat risiko: {risiko}. Mohon jaga pola makan dan kontrol rutin. - dr. {st.session_state.dr}"
-                st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(pesan_fsrp)}" target="_blank" class="wa-btn">📲 KIRIM EDUKASI KE PASIEN VIA WA</a>', unsafe_allow_html=True)
-                
-                # Tampilan Resume Cetak
-                st.markdown(f"""
-                    <div class="print-report">
-                        <div class="kop-surat"><h2>LAPORAN ANALISIS RISIKO STROKE (FSRP)</h2></div>
-                        <p><b>Pasien:</b> {p_nama} ({p_umur} th) | <b>Pemeriksa:</b> dr. {st.session_state.dr}</p>
-                        <hr>
-                        <p><b>TD Sistolik:</b> {tds} mmHg | <b>Total Kolesterol:</b> {chol} mg/dL | <b>Penyakit Jantung:</b> {"Ada" if cvd else "Tidak"}</p>
-                        <h3 style="color:red;">INTERPRETASI: RISIKO {risiko}</h3>
-                    </div>
+    with col2:
+        st.markdown("<div class='role-card' style='border-top-color:#28a745;'><h3>👨‍👩‍👧‍👦 Masyarakat (Non-Nakes)</h3><p>Skrining Mandiri Risiko Stroke (Stroke Risk Scorecard)</p></div>", unsafe_allow_html=True)
+        st.write("")
+        if st.button("Mulai Skrining Mandiri", use_container_width=True):
+            st.session_state.role = "Non-Nakes"
+            st.rerun()
+
+    st.stop()
+
+# --- 4. SIDEBAR UTAMA ---
+with st.sidebar:
+    st.markdown("<div style='padding:8px 0 18px;'><div style='font-size:.72rem;letter-spacing:.15em;color:#f2d28b;font-weight:800;'>SINTALA v8.0</div><div style='font-size:1.25rem;font-weight:800;color:#ffffff;'>Clinical Workspace</div></div>", unsafe_allow_html=True)
+    st.markdown(f"**Status Akses**  \n{st.session_state.role}")
+    if st.session_state.dr:
+        st.markdown(f"DPJP/Petugas: **{st.session_state.dr}**")
+    
+    if st.session_state.role == "Nakes":
