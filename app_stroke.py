@@ -5,7 +5,7 @@ import requests
 from datetime import datetime
 
 # --- 1. SETUP UI & GLOBAL STYLES ---
-st.set_page_config(page_title="SINTALA", layout="wide", page_icon="🩺")
+st.set_page_config(page_title="SINTALA v8.0", layout="wide", page_icon="🩺")
 
 st.markdown("""
     <style>
@@ -60,7 +60,7 @@ if 'role' not in st.session_state: st.session_state.role = None
 if 'dr' not in st.session_state: st.session_state.dr = ""
 if 'menu_nakes' not in st.session_state: st.session_state.menu_nakes = "Home"
 
-# --- 3. HOMEPAGE: PILIHAN AKSES (NAKES VS NON-NAKES) ---
+# --- 3. HOMEPAGE: PILIHAN AKSES (LOGIN NAKES VS NON-NAKES) ---
 if not st.session_state.role:
     st.markdown("<h1 style='text-align:center; color:#004a99;'>🩺 SINTALA v8.0</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; margin-top:-15px; font-weight:bold;'>Stroke Integrated Analysis & Screening System</p><br>", unsafe_allow_html=True)
@@ -70,19 +70,33 @@ if not st.session_state.role:
     with col1:
         st.markdown("<div class='role-card'><h3>👨‍⚕️ Tenaga Medis (Nakes)</h3><p>Akses klinis: FSRP, NIHSS (SOAP), & Siriraj Score</p></div>", unsafe_allow_html=True)
         st.write("")
-        dr_input = st.text_input("Nama Dokter / Petugas Medis:")
-        if st.button("Masuk Layanan Nakes", use_container_width=True):
-            if dr_input:
-                st.session_state.role = "Nakes"
-                st.session_state.dr = dr_input
-                st.rerun()
-            else:
-                st.warning("Mohon masukkan nama Dokter/Petugas Medis terlebih dahulu.")
+        
+        # Form Login Nakes dengan Username & Password
+        with st.form("form_login_nakes"):
+            u_name = st.text_input("Username Nakes:")
+            u_pass = st.text_input("Password:", type="password")
+            btn_login = st.form_submit_button("Login Layanan Nakes", use_container_width=True)
+            
+            if btn_login:
+                # Database kredensial nakes Puskesmas Tirta Jaya
+                valid_nakes = {
+                    "dr.faisal": {"pass": "tirtajaya2026", "nama": "dr. Mochamad Faisal Bayu Pratomo"},
+                    "bidan_siti": {"pass": "puskesmas123", "nama": "Siti Aminah, A.Md.Keb"},
+                    "perawat_budi": {"pass": "nakestirtajaya", "nama": "Budi Santoso, S.Kep.Ns"}
+                }
+                
+                if u_name in valid_nakes and valid_nakes[u_name]["pass"] == u_pass:
+                    st.session_state.role = "Nakes"
+                    st.session_state.dr = valid_nakes[u_name]["nama"]
+                    st.rerun()
+                else:
+                    st.error("Username atau Password salah!")
 
     with col2:
         st.markdown("<div class='role-card' style='border-top-color:#28a745;'><h3>👨‍👩‍👧‍👦 Masyarakat (Non-Nakes)</h3><p>Skrining Mandiri Risiko Stroke (Stroke Risk Scorecard)</p></div>", unsafe_allow_html=True)
         st.write("")
-        if st.button("Mulai Skrining Mandiri", use_container_width=True):
+        st.write("") # Penyeimbang tinggi form
+        if st.button("Mulai Skrining Mandiri (Tanpa Login)", use_container_width=True):
             st.session_state.role = "Non-Nakes"
             st.rerun()
 
