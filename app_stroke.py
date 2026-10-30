@@ -82,7 +82,6 @@ if not st.session_state.role:
                 valid_nakes = {
                     "dr.faisal": {"pass": "tirtajaya2026", "nama": "dr. Mochamad Faisal Bayu Pratomo"},
                     "bidan_siti": {"pass": "puskesmas123", "nama": "Siti Aminah, A.Md.Keb"},
-                    "perawat_budi": {"pass": "nakestirtajaya", "nama": "Budi Santoso, S.Kep.Ns"}
                     "dr.Eko.Sp.N": {"pass": "Neurologi", "nama": "dr. Eko Suryo Pujiastono,Sp.N"}
                 }
                 
